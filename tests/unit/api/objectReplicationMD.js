@@ -403,6 +403,40 @@ describe('Replication object MD without bucket replication config', () => {
                 );
             });
 
+            it('should update metadata if putting object ACL and CRR replication in the compatibility mode', done => {
+                config.locationConstraints['zenko'] = {
+                    ...config.locationConstraints['zenko'],
+                    type: '',
+                };
+                config.replicationCascadeCompatMode = true;
+
+                async.series(
+                    [
+                        next => objectPut(authInfo, getObjectPutReq(keyA, true), undefined, log, next),
+                        next => {
+                            const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                            // Update metadata to a status after replication has occurred.
+                            objectMD.replicationInfo.status = 'COMPLETED';
+                            objectPutACL(authInfo, objectACLReq, log, next);
+                        },
+                    ],
+                    err => {
+                        config.replicationCascadeCompatMode = false;
+                        if (err) {
+                            return done(err);
+                        }
+                        const { replicationInfo } = metadata.keyMaps.get(bucketName).get(keyA);
+                        assert.strictEqual(replicationInfo.status, 'PENDING');
+                        assert.deepStrictEqual(replicationInfo.content, ['METADATA']);
+                        assert.strictEqual(replicationInfo.storageClass, 'zenko');
+                        assert.strictEqual(replicationInfo.backends[0].role, undefined);
+                        // A cloudserver older than 9.4 sets no microVersionId here.
+                        assert.strictEqual(metadata.keyMaps.get(bucketName).get(keyA).microVersionId, undefined);
+                        return done();
+                    },
+                );
+            });
+
             it('should not update metadata if putting object ACL and cloud replication', done => {
                 // Set 'zenko' as a typical cloud location (i.e.  type)
                 config.locationConstraints['zenko'] = {

@@ -219,6 +219,40 @@ describe('routeBackbeat', () => {
         assert.strictEqual(mockResponse.body.code, 'BadDigest');
     });
 
+    it('should write the data again in the replication compatibility mode when the version exists', async () => {
+        // Outside the compatibility mode this request is answered 409 VersionIdCollisionException.
+        const rawVersionId = versioning.VersionID.generateVersionId('test', 'RG001');
+        mockRequest = prepareDummyRequest({
+            'x-scal-canonical-id': 'id',
+            'content-md5': '1234',
+            'content-length': '0',
+            'x-scal-versioning-required': 'true',
+        });
+        mockRequest.method = 'PUT';
+        mockRequest.url = `/_/backbeat/data/bucket0/key0?versionId=${versioning.VersionID.encode(rawVersionId)}`;
+        mockRequest.destroy = () => {};
+        metadataUtils.standardMetadataValidateBucketAndObj.callsFake((params, denies, log, callback) => {
+            callback(
+                null,
+                {
+                    getVersioningConfiguration: () => ({ Status: 'Enabled' }),
+                    isVersioningEnabled: () => true,
+                    getLocationConstraint: () => undefined,
+                },
+                { versionId: rawVersionId },
+            );
+        });
+        storeObject.dataStore.callsFake((...args) => args[args.length - 1](null, {}, '1234'));
+
+        config.replicationCascadeCompatMode = true;
+        routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+        void (await endPromise);
+        config.replicationCascadeCompatMode = false;
+
+        sinon.assert.calledOnce(storeObject.dataStore);
+        assert.strictEqual(mockResponse.statusCode, 200);
+    });
+
     it('should return 409 VersionIdCollisionException when versionId matches master, no microVersionId', async () => {
         // Old objects without microVersionId: data is already at destination.
         // Cloudserver returns 409 VersionIdCollisionException with empty x-scal-micro-version-id.
@@ -576,6 +610,49 @@ describe('routeBackbeat', () => {
                 assert.strictEqual(omVal.replicationInfo.status, '');
                 assert.deepStrictEqual(omVal.replicationInfo.backends, []);
                 assert.strictEqual(omVal.replicationInfo.isReplica, true);
+            });
+
+            describe('in the replication compatibility mode', () => {
+                beforeEach(() => {
+                    config.replicationCascadeCompatMode = true;
+                });
+
+                afterEach(() => {
+                    config.replicationCascadeCompatMode = false;
+                });
+
+                it('should store the update as a REPLICA and not replicate it further', async () => {
+                    mockRequest = prepareTagUpdate(versioning.VersionID.generateVersionId('test', 'RG001'));
+
+                    routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+                    void (await endPromise);
+
+                    assert.strictEqual(mockResponse.statusCode, 200);
+                    const omVal = putObjectMDStub.firstCall.args[2];
+                    assert.deepStrictEqual(omVal.tags, { t: '1' });
+                    // The replica keeps the status backbeat sent, like on a
+                    // cloudserver older than 9.4.
+                    assert.strictEqual(omVal.replicationInfo.status, 'REPLICA');
+                    assert.strictEqual(omVal.replicationInfo.backends, undefined);
+                    assert.strictEqual('isReplica' in omVal.replicationInfo, false);
+                });
+
+                it('should not compare the microVersionId with the one we store', async () => {
+                    // Outside the compatibility mode, the same microVersionId on both
+                    // sides is answered 409 MicroVersionIdAlreadyStored.
+                    const microVersionId = versioning.VersionID.generateVersionId('test', 'RG001');
+                    mockRequest = prepareTagUpdate(microVersionId);
+                    metadataUtils.standardMetadataValidateBucketAndObj.callsFake((_params, _denies, _log, callback) => {
+                        callback(null, bucketInfoWithNextHop, { tags: {}, microVersionId });
+                    });
+
+                    routeBackbeat('127.0.0.1', mockRequest, mockResponse, log);
+                    void (await endPromise);
+
+                    assert.strictEqual(mockResponse.statusCode, 200);
+                    sinon.assert.calledOnce(putObjectMDStub);
+                    assert.strictEqual(putObjectMDStub.firstCall.args[3].conditions, undefined);
+                });
             });
         });
 

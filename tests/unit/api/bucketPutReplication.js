@@ -2,9 +2,13 @@ const assert = require('assert');
 
 const bucketPutReplication = require('../../../lib/api/bucketPutReplication');
 const { DummyRequestLogger, makeAuthInfo } = require('../helpers');
-const { getReplicationConfiguration } = require('../../../lib/api/apiUtils/bucket/getReplicationConfiguration');
+const {
+    getReplicationConfiguration,
+    toLegacyConfiguration,
+} = require('../../../lib/api/apiUtils/bucket/getReplicationConfiguration');
 const validateReplicationConfig = require('../../../lib/api/apiUtils/bucket/validateReplicationConfig');
 const replicationUtils = require('../../functional/aws-node-sdk/lib/utility/replication');
+const { config } = require('../../../lib/Config');
 const log = new DummyRequestLogger();
 
 // Check for the expected error response code and status code.
@@ -100,6 +104,70 @@ describe('getReplicationConfiguration function', () => {
     });
 });
 
+describe('toLegacyConfiguration function', () => {
+    const role = 'arn:aws:iam::account-id:role/src-resource,arn:aws:iam::account-id:role/dest-resource';
+    const rule = (prefix, bucket) => ({
+        prefix,
+        enabled: true,
+        id: prefix,
+        storageClass: 'STANDARD',
+        destination: `arn:aws:s3:::${bucket}`,
+    });
+
+    it('should return the shape a cloudserver older than 9.4 stores', () => {
+        const config = { role, rules: [rule('a', 'backup'), rule('b', 'backup')], preferredReadLocation: null };
+        assert.deepStrictEqual(toLegacyConfiguration(config), {
+            replicationConfig: {
+                role,
+                destination: 'arn:aws:s3:::backup',
+                rules: [
+                    { prefix: 'a', enabled: true, id: 'a', storageClass: 'STANDARD' },
+                    { prefix: 'b', enabled: true, id: 'b', storageClass: 'STANDARD' },
+                ],
+                preferredReadLocation: null,
+            },
+        });
+    });
+
+    it('should refuse rules that replicate to different buckets', () => {
+        const config = { role, rules: [rule('a', 'backup'), rule('b', 'backup2')] };
+        assert.deepStrictEqual(toLegacyConfiguration(config), {
+            refused: { code: 'InvalidRequest', description: 'The destination bucket must be the same for all rules' },
+        });
+    });
+
+    it('should refuse rules with overlapping prefixes', () => {
+        const config = { role, rules: [rule('logs', 'backup'), rule('logs/2026', 'backup')] };
+        assert.deepStrictEqual(toLegacyConfiguration(config), {
+            refused: { code: 'InvalidRequest', description: "Found overlapping prefixes 'logs' and 'logs/2026'" },
+        });
+    });
+
+    it('should ignore the account of a rule', () => {
+        const config = { role, rules: [{ ...rule('a', 'backup'), account: '123456789012' }] };
+        assert.deepStrictEqual(toLegacyConfiguration(config).replicationConfig.rules, [
+            { prefix: 'a', enabled: true, id: 'a', storageClass: 'STANDARD' },
+        ]);
+    });
+
+    it('should refuse a single role when a rule replicates to a CRR site', () => {
+        const config = { role: role.split(',')[0], rules: [rule('a', 'backup')] };
+        assert.deepStrictEqual(toLegacyConfiguration(config), {
+            refused: {
+                code: 'InvalidArgument',
+                description:
+                    'Invalid Role specified in replication configuration: ' +
+                    'Role must be a comma-separated list of two IAM roles',
+            },
+        });
+    });
+
+    it('should accept a single role when the rules replicate to cloud sites only', () => {
+        const config = { role: role.split(',')[0], rules: [{ ...rule('a', 'backup'), storageClass: 'us-east-2' }] };
+        assert.strictEqual(toLegacyConfiguration(config).refused, undefined);
+    });
+});
+
 describe('validateReplicationConfig function', () => {
     const nonTransientBucket = {
         getLocationConstraint: () => 'us-east-1',
@@ -180,6 +248,24 @@ describe('bucketPutReplication API', () => {
         };
         bucketPutReplication(authInfo, request, log, err => {
             assert(err.is.MalformedXML);
+            done();
+        });
+    });
+
+    it('should refuse two destination buckets in the replication compatibility mode', done => {
+        const oneRule = createReplicationXML().match(/<Rule>.*<\/Rule>/)[0];
+        const otherBucket = oneRule.replace('destination-bucket', 'other-bucket').replace('foo', 'bar');
+        const request = {
+            bucketName: 'test-bucket',
+            post: createReplicationXML().replace(oneRule, oneRule + otherBucket),
+            headers: {},
+            actionImplicitDenies: false,
+        };
+        config.replicationCascadeCompatMode = true;
+        bucketPutReplication(makeAuthInfo('accessKey1'), request, log, err => {
+            config.replicationCascadeCompatMode = false;
+            assert(err.is.InvalidRequest);
+            assert.strictEqual(err.description, 'The destination bucket must be the same for all rules');
             done();
         });
     });

@@ -395,6 +395,40 @@ describe('getReplicationInfo helper', () => {
         });
     });
 
+    describe('replication compatibility mode', () => {
+        const compatS3Config = { ...TEST_CONFIG, replicationCascadeCompatMode: true };
+
+        it('should write what a cloudserver older than 9.4 writes', () => {
+            const replicationConfig = {
+                role: TWO_PART_ROLE,
+                destination: 'arn:aws:s3:::backup',
+                rules: [{ prefix: '', enabled: true, storageClass: 'crr-site' }],
+            };
+            assert.deepStrictEqual(_getObjectReplicationInfo(compatS3Config, replicationConfig), {
+                status: 'PENDING',
+                backends: [{ site: 'crr-site', status: 'PENDING', dataStoreVersionId: '' }],
+                content: ['METADATA'],
+                destination: 'arn:aws:s3:::backup',
+                storageClass: 'crr-site',
+                role: TWO_PART_ROLE,
+                storageType: '',
+                dataStoreVersionId: '',
+                isNFS: undefined,
+            });
+        });
+
+        it('should write the rule storageClass as it is, and the types of the cloud backends', () => {
+            const replicationConfig = {
+                role: TWO_PART_ROLE,
+                destination: 'tosomewhere',
+                rules: [{ prefix: '', enabled: true, storageClass: 'awsbackend:preferred_read,azurebackend' }],
+            };
+            const replicationInfo = _getObjectReplicationInfo(compatS3Config, replicationConfig);
+            assert.strictEqual(replicationInfo.storageClass, 'awsbackend:preferred_read,azurebackend');
+            assert.strictEqual(replicationInfo.storageType, 'aws_s3,azure');
+        });
+    });
+
     // --- V2 Format Tests (multi-rule matching) ---
     describe('V2 format (multi-rule matching)', () => {
         const V2_ROLE = 'arn:aws:iam::123456:role/src-role,arn:aws:iam::111111:role/dst-role';
