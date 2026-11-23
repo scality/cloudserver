@@ -1314,10 +1314,10 @@
   resolved "https://registry.yarnpkg.com/@protobufjs/utf8/-/utf8-1.1.2.tgz#78d476333d85d5b1c792e257bca74ba080da49a4"
   integrity sha512-b1UQwcEZ4yCnMCD8DAL1VlbvBJE9/IX4FTIp7BG1xYpf29SLazLSrqUkj4w7Y5y7cCVP6E5tcqqcI0xemPkHug==
 
-"@scality/arsenal@^8.6.0", "@scality/arsenal@^8.6.1":
-  version "8.6.1"
-  resolved "https://registry.yarnpkg.com/@scality/arsenal/-/arsenal-8.6.1.tgz#f2db3ec8184646282872850d1cce3c16870f053c"
-  integrity sha512-EwKYj0htAbDvDmu4h3EeIG1RwwxGCRvUixQN8NHx9bJIHS5qucQLvNCQ45BNR0q4MDIza3fyE6Xn7DF5hxBBUQ==
+"@scality/arsenal@^8.6.0", "@scality/arsenal@^8.6.3":
+  version "8.6.3"
+  resolved "https://registry.yarnpkg.com/@scality/arsenal/-/arsenal-8.6.3.tgz#49d729706318c5e271b7ccae4ea2233af66df64a"
+  integrity sha512-If/jbSrx1dP93Va/9AE+OGqrAeaqfDt+6+ETeT3Wd2N3I3tbNa9J4ic4EQMwf8ndehnWX7imMfm7ZaWVW5oNwA==
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"

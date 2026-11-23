@@ -218,7 +218,19 @@ describe('parseKms Function', () => {
         it('should reject an invalid providerName', () => {
             assert.throws(
                 () => configInstance._parseKms({ kms: [{ ...kmipEntry, providerName: 'Thales' }] }),
-                /providerName must be lowercase alphanumeric only/,
+                /kms entry providerName must contain only lowercase letters, digits, '-' and '_'/,
+            );
+        });
+
+        it('should accept a providerName with separators', () => {
+            configInstance._parseKms({ kms: [{ ...kmipEntry, providerName: 'thales-preprod' }] });
+            assert.strictEqual(configInstance.kms[0].providerName, 'thales-preprod');
+        });
+
+        it('should reject a providerName ending with a separator', () => {
+            assert.throws(
+                () => configInstance._parseKms({ kms: [{ ...kmipEntry, providerName: 'thales-' }] }),
+                /kms entry providerName must contain only lowercase letters, digits, '-' and '_'/,
             );
         });
 
