@@ -25,6 +25,9 @@ const http = require('http');
 const https = require('https');
 const assert = require('assert');
 const logger = { info: msg => process.stdout.write(`${msg}\n`) };
+
+// A KMS of the server config that accepts connections and never answers
+const unresponsiveKmsProviderName = 'unresponsive';
 const async = require('async');
 
 function _createBucketWithHeaders(name, headers, done) {
@@ -228,7 +231,9 @@ describe('KMIP backed server-side encryption', () => {
 describe('KMIP backed server-side encryption with other KMSs configured', () => {
     const createBucket = promisify(_createBucket);
     const createBucketWithHeaders = promisify(_createBucketWithHeaders);
-    const nonDefaultEntries = serverConfig.kms.filter(entry => !entry.default);
+    const nonDefaultEntries = serverConfig.kms.filter(
+        entry => !entry.default && entry.providerName !== unresponsiveKmsProviderName,
+    );
     const body = 'I am the best content ever';
     let bucketName;
     let objectName;
@@ -490,6 +495,18 @@ describe('KMIP backed server-side encryption with other KMSs configured', () => 
             await assertStoredAndRefusedOnWrite(encryptedBucketName);
         });
     });
+
+    describe('with a key of a KMS that does not answer', () => {
+        const keyArn = `${makeScalityArnPrefix(KmsType.external, KmsProtocol.kmip, unresponsiveKmsProviderName)}1`;
+
+        it('should fail PutObject with an internal error after the time limit of the KMS', () =>
+            assert.rejects(putObject(bucketName, objectName, keyArn), err => {
+                assert.strictEqual(err.name, 'InternalError');
+                assert.strictEqual(err.$metadata.httpStatusCode, 500);
+                assert.match(err.message, /ETIMEDOUT/);
+                return true;
+            }));
+    });
 });
 
 describe('KMS health in the deep health check', () => {
@@ -506,16 +523,29 @@ describe('KMS health in the deep health check', () => {
         });
     }
 
-    it('should report every configured KMS, keyed by kms: and the provider name', async () => {
+    it('should report every configured KMS that answers, keyed by kms: and the provider name', async () => {
         const { statusCode, body } = await getDeepHealthcheck();
 
         assert.strictEqual(statusCode, 200);
-        serverConfig.kms.forEach(({ protocol, providerName }) => {
-            const { lastChecked, ...health } = body[`kms:${providerName}`];
-            assert.deepStrictEqual(health, { code: 200, message: 'OK' }, `KMS ${providerName}`);
-            // A KMS whose client has no health check reports OK without being checked;
-            // today only the KMIP client has one
-            assert.strictEqual(lastChecked !== undefined, protocol === KmsProtocol.kmip, `KMS ${providerName}`);
-        });
+        serverConfig.kms
+            .filter(({ providerName }) => providerName !== unresponsiveKmsProviderName)
+            .forEach(({ protocol, providerName }) => {
+                const { lastChecked, ...health } = body[`kms:${providerName}`];
+                assert.deepStrictEqual(health, { code: 200, message: 'OK' }, `KMS ${providerName}`);
+                // A KMS whose client has no health check reports OK without being checked;
+                // today only the KMIP client has one
+                assert.strictEqual(lastChecked !== undefined, protocol === KmsProtocol.kmip, `KMS ${providerName}`);
+            });
+    });
+
+    it('should report an unresponsive KMS as failed after its time limit, without blocking start-up', async () => {
+        const { statusCode, body } = await getDeepHealthcheck();
+
+        assert.strictEqual(statusCode, 200);
+        const { code, message, description } = body[`kms:${unresponsiveKmsProviderName}`];
+        assert.strictEqual(code, 500);
+        assert.strictEqual(message, 'KMS health check failed');
+        // Checked at start-up, while the KMS was already listening
+        assert.match(description, /ETIMEDOUT/);
     });
 });
