@@ -625,6 +625,10 @@ jobs:
           - vformat: v1
             enable-null-compat: ''
             job-name: s3c-ft-tests-v1
+          - vformat: v0
+            enable-null-compat: ''
+            replication-compat: 'true'
+            job-name: s3c-ft-tests-v0-replication-compat
     name: ${{ matrix.job-name }}
     runs-on: ubuntu-24.04
     needs: build
@@ -670,7 +674,9 @@ jobs:
         run: |
           sed -i 's/\("METADATA_NEW_BUCKETS_VFORMAT":\s*\)"[^"]*"/\1"${{ matrix.vformat }}"/' .github/docker/md-config.json
       - name: Copy S3C config
-        run: cp .github/docker/config.s3c.json tests/functional/sse-kms-migration/config.json
+        run: |
+          jq '. * { replicationCascadeCompatMode: ${{ matrix.replication-compat || false }} }' \
+            .github/docker/config.s3c.json > tests/functional/sse-kms-migration/config.json
       - name: Setup CI services
         run: docker compose up -d --quiet-pull redis sproxyd metadata-standalone vault cloudserver-sse-before-migration
         working-directory: .github/docker
@@ -685,7 +691,7 @@ jobs:
         working-directory: .github/docker
       - name: Set config files env variables
         run: |-
-          echo "S3_CONFIG_FILE=${{ github.workspace }}/.github/docker/config.s3c.json" >> $GITHUB_ENV
+          echo "S3_CONFIG_FILE=${{ github.workspace }}/tests/functional/sse-kms-migration/config.json" >> $GITHUB_ENV
           echo "S3_LOCATION_FILE=${{ github.workspace }}/tests/locationConfig/locationConfigS3C.json" >> $GITHUB_ENV
       - name: Run cloudserver-object tests
         run: |-

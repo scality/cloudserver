@@ -14,6 +14,7 @@ const {
 const { versioning, models } = require('arsenal');
 const { ObjectMD } = models;
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
+const { config } = require('../../../lib/Config');
 
 const {
     BackbeatRoutesClient,
@@ -33,6 +34,11 @@ const OBJECT_MD5_HEX = createHash('md5').update(OBJECT_BODY).digest('hex');
 const CANONICAL_ID = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 const bucketUtil = new BucketUtility('default', {});
 const s3 = bucketUtil.s3;
+
+// In replication compatibility mode, putMetadata ignores the MicroVersionId
+// header and stores a replica as REPLICA, like a cloudserver older than 9.4.
+const describeCascade = config.replicationCascadeCompatMode ? describe.skip : describe;
+const describeCompatMode = config.replicationCascadeCompatMode ? describe : describe.skip;
 
 let backbeatClient;
 
@@ -138,7 +144,7 @@ before(async () => {
 
 // These tests send no x-scal-replication-content header — microVersionId is used
 // purely as a conditional update mechanism, independent of replication.
-describe('putMetadata : microVersionId conditional updates (no replication content)', () => {
+describeCascade('putMetadata : microVersionId conditional updates (no replication content)', () => {
     it('should succeed on first write when destination has no microVersionId', async () => {
         const key = 'putmetadata-cond-first-write';
         const mvId = makeMicroVersionId();
@@ -338,7 +344,7 @@ describe('putMetadata : microVersionId conditional updates (no replication conte
 
 // These tests send x-scal-replication-content to simulate backbeat replication writes.
 // microVersionId conditional update semantics apply on top of the replication behavior.
-describe('putMetadata : cascade replication behavior (with replication content)', () => {
+describeCascade('putMetadata : cascade replication behavior (with replication content)', () => {
     it('should succeed on first write of a zero-byte object without replication content', async () => {
         const key = 'putmetadata-crr-zero-byte';
         await backbeatClient.send(
@@ -488,6 +494,68 @@ describe('putMetadata : cascade replication behavior (with replication content)'
             storedMd.getReplicationIsReplica(),
             true,
             'isReplica should be preserved regardless of cascade triggering',
+        );
+    });
+});
+
+describeCompatMode('putMetadata : replication compatibility mode', () => {
+    it('should accept a second write with the same microVersionId', async () => {
+        const key = 'putmetadata-compat-same-mvid';
+        const mvId = makeMicroVersionId();
+        await putMetadata(key, mvId);
+        // Without the mode, this returns MicroVersionIdAlreadyStoredException.
+        await putMetadata(key, mvId);
+    });
+
+    it('should keep a replica as REPLICA when the bucket has CRR rules', async () => {
+        const key = 'putmetadata-compat-no-cascade';
+        // First write creates the object (required before METADATA-content writes).
+        await backbeatClient.send(
+            new PutMetadataCommand({
+                Bucket: TEST_BUCKET_CRR,
+                Key: key,
+                Body: buildMetadataBody({}),
+            }),
+        );
+        await backbeatClient.send(
+            new PutMetadataCommand({
+                Bucket: TEST_BUCKET_CRR,
+                Key: key,
+                ReplicationContent: 'METADATA',
+                Body: buildMetadataBody({}),
+            }),
+        );
+        const { Body } = await backbeatClient.send(new GetMetadataCommand({ Bucket: TEST_BUCKET_CRR, Key: key }));
+        // Without the mode, the status is PENDING: the replica is replicated further.
+        assert.strictEqual(
+            new ObjectMD(JSON.parse(Body)).getReplicationStatus(),
+            'REPLICA',
+            'a replica should not be replicated further',
+        );
+    });
+
+    it('should not set a microVersionId on objectPutTagging', async () => {
+        const key = 'putmetadata-compat-tagging';
+        await s3.send(
+            new PutObjectCommand({
+                Bucket: TEST_BUCKET_CRR,
+                Key: key,
+                Body: Buffer.from(OBJECT_BODY),
+                ContentType: 'text/plain',
+            }),
+        );
+        await s3.send(
+            new PutObjectTaggingCommand({
+                Bucket: TEST_BUCKET_CRR,
+                Key: key,
+                Tagging: { TagSet: [{ Key: 'crr', Value: 'compat' }] },
+            }),
+        );
+        const { Body } = await backbeatClient.send(new GetMetadataCommand({ Bucket: TEST_BUCKET_CRR, Key: key }));
+        assert.strictEqual(
+            new ObjectMD(JSON.parse(Body)).getMicroVersionId(),
+            undefined,
+            'objectPutTagging should not set a microVersionId',
         );
     });
 });

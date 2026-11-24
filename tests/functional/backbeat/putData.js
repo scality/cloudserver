@@ -8,6 +8,7 @@ const { CreateBucketCommand, PutBucketVersioningCommand, PutObjectCommand } = re
 const { versioning } = require('arsenal');
 const { ExternalNullVersionId } = versioning.VersioningConstants;
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
+const { config } = require('../../../lib/Config');
 
 const { BackbeatRoutesClient, PutDataCommand, VersionIdCollisionException } = require('@scality/cloudserverclient');
 
@@ -20,6 +21,11 @@ const OBJECT_MD5_HEX = createHash('md5').update(OBJECT_BODY).digest('hex');
 const CANONICAL_ID = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 const bucketUtil = new BucketUtility('default', {});
 const s3 = bucketUtil.s3;
+
+// In replication compatibility mode, putData ignores the VersionId and always
+// writes the data, like a cloudserver older than 9.4.
+const describeCascade = config.replicationCascadeCompatMode ? describe.skip : describe;
+const describeCompatMode = config.replicationCascadeCompatMode ? describe : describe.skip;
 
 let backbeatClient;
 
@@ -60,7 +66,7 @@ before(async () => {
     await s3.send(new CreateBucketCommand({ Bucket: TEST_BUCKET_UNVERSIONED }));
 });
 
-describe('putData : VersionId collision detection', () => {
+describeCascade('putData : VersionId collision detection', () => {
     it('should throw VersionIdCollisionException with microVersionId when versionId matches master', async () => {
         const key = 'putdata-collision';
         const putResult = await s3.send(
@@ -148,7 +154,7 @@ describe('putData : VersionId collision detection', () => {
     });
 });
 
-describe('putData : null-version objects (ExternalNullVersionId)', () => {
+describeCascade('putData : null-version objects (ExternalNullVersionId)', () => {
     it('should write normally when VersionId is "null" and destination has no null version', async () => {
         // Versioned bucket: existing object has a real versionId, not a null version.
         // Fetching with ExternalNullVersionId returns no objMd => no collision => write normally.
@@ -208,6 +214,23 @@ describe('putData : null-version objects (ExternalNullVersionId)', () => {
             );
             assert.strictEqual(err.microVersionId, '', 'microVersionId should be empty for null-version collision');
         }
+    });
+});
+
+describeCompatMode('putData : replication compatibility mode', () => {
+    it('should write data even when the VersionId already exists', async () => {
+        const key = 'putdata-compat-existing-version';
+        const putResult = await s3.send(
+            new PutObjectCommand({
+                Bucket: TEST_BUCKET,
+                Key: key,
+                Body: Buffer.from(OBJECT_BODY),
+                ContentType: 'text/plain',
+            }),
+        );
+        // Without the mode, this returns VersionIdCollisionException.
+        const output = await putData(key, { versionId: putResult.VersionId });
+        assert.ok(output.Location, 'putData should write the data and return a Location');
     });
 });
 
