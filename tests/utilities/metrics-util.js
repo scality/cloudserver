@@ -1,5 +1,4 @@
 const http = require('http');
-const assert = require('assert');
 
 /**
  * Get the metrics cloudserver exposes on its metrics port
@@ -10,7 +9,11 @@ const assert = require('assert');
 function getMetrics(host, port = 8002) {
     return new Promise((resolve, reject) => {
         http.get({ host, path: '/metrics', port }, res => {
-            assert.strictEqual(res.statusCode, 200);
+            if (res.statusCode !== 200) {
+                res.resume();
+                reject(new Error(`GET /metrics answered ${res.statusCode}`));
+                return;
+            }
 
             const body = [];
             res.on('data', chunk => {
