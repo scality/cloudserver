@@ -390,6 +390,26 @@ const versioningTestUtils = {
     },
 };
 
+const replicationTestUtils = {
+    createBucketPutReplicationReq: bucketName => ({
+        bucketName,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: '/?replication',
+        post:
+            '<ReplicationConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+            '<Role>arn:aws:iam::account-id:role/src-resource</Role>' +
+            '<Rule>' +
+            '<Prefix></Prefix>' +
+            '<Status>Enabled</Status>' +
+            '<Destination>' +
+            '<Bucket>arn:aws:s3:::destination-bucket</Bucket>' +
+            '<StorageClass>us-east-2</StorageClass>' +
+            '</Destination>' +
+            '</Rule>' +
+            '</ReplicationConfiguration>',
+    }),
+};
+
 class TaggingConfigTester {
     constructor() {
         this._tags = { k1: 'v1', k2: 'v2' };
@@ -552,6 +572,7 @@ module.exports = {
     CorsConfigTester,
     objectLockTestUtils,
     versioningTestUtils,
+    replicationTestUtils,
     TaggingConfigTester,
     AccessControlPolicy,
     createRequestContext,
