@@ -11,6 +11,7 @@ const { DummyRequestLogger, versioningTestUtils, makeAuthInfo } = require('../he
 const dataWrapper = require('../../../lib/data/wrapper');
 const DummyRequest = require('../DummyRequest');
 const { auth, errors, versioning } = require('@scality/arsenal');
+const tracingInstrumentation = require('@scality/arsenal/build/lib/tracing/instrumentation');
 const AuthInfo = auth.AuthInfo;
 const { config } = require('../../../lib/Config');
 const quotaUtils = require('../../../lib/api/apiUtils/quotas/quotaUtils');
@@ -1858,5 +1859,26 @@ describe('routeBackbeat CRR conflict error names', () => {
         it(`should match cloudserverclient ${exception} name`, () => {
             assert.strictEqual(crrConflictErrors[key], cloudserverClient[exception].name);
         });
+    });
+});
+
+describe('routeBackbeat tracing', () => {
+    const routeBackbeatPath = require.resolve('../../../lib/routes/routeBackbeat');
+
+    afterEach(() => {
+        sinon.restore();
+        delete require.cache[routeBackbeatPath];
+    });
+
+    it('should trace routes as backbeat.<handler name>', () => {
+        sinon
+            .stub(tracingInstrumentation, 'instrumentApiMethod')
+            .callsFake((handler, name, prefix) => `${prefix}${name}`);
+        delete require.cache[routeBackbeatPath];
+
+        const { backbeatRoutes } = require(routeBackbeatPath);
+
+        assert.strictEqual(backbeatRoutes.PUT.metadata, 'backbeat.putMetadata');
+        assert.strictEqual(backbeatRoutes.POST.index.add, 'backbeat.putBucketIndexes');
     });
 });
