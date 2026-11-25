@@ -62,7 +62,7 @@ describe('HEAD object, compatibility headers [Cache-Control, ' +
                   // Should remove V4 streaming value 'aws-chunked'
                   // to be compatible with AWS behavior
                   assert.strictEqual(res.ContentEncoding,
-                    'gzip,');
+                    'gzip');
                   assert.strictEqual(res.Expires.toGMTString(),
                       expires.toGMTString());
                   return done();

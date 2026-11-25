@@ -503,6 +503,59 @@ describe('objectCopy overheadField', () => {
     });
 });
 
+describe('objectCopy Content-Encoding', () => {
+    before(done => {
+        cleanup();
+        // a value with a leftover separator, as stored before aws-chunked
+        // removal was fixed
+        const testPutObjectRequest = versioningTestUtils.createPutObjectRequest(
+            sourceBucketName, objectKey, objData[0]);
+        testPutObjectRequest.headers['content-encoding'] = 'gzip,';
+        async.series(
+            [
+                callback => bucketPut(authInfo, putDestBucketRequest, log, callback),
+                callback => bucketPut(authInfo, putSourceBucketRequest, log, callback),
+                callback => objectPut(authInfo, testPutObjectRequest, undefined, log, callback),
+            ],
+            done,
+        );
+    });
+
+    after(() => {
+        cleanup();
+    });
+
+    [
+        {
+            desc: 'remove the leftover separator of the source with the COPY directive',
+            headers: {},
+            expected: 'gzip',
+        },
+        {
+            desc: 'remove aws-chunked from the request value with the REPLACE directive',
+            headers: { 'x-amz-metadata-directive': 'REPLACE', 'content-encoding': 'br,aws-chunked' },
+            expected: 'br',
+        },
+        {
+            desc: 'remove a leftover separator from the request value with the REPLACE directive',
+            headers: { 'x-amz-metadata-directive': 'REPLACE', 'content-encoding': 'br,' },
+            expected: 'br',
+        },
+    ].forEach(({ desc, headers, expected }) => {
+        it(`should ${desc}`, done => {
+            const testObjectCopyRequest = _createObjectCopyRequest(destBucketName, headers);
+            objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+                assert.ifError(err);
+                metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
+                    assert.ifError(err);
+                    assert.strictEqual(md['content-encoding'], expected);
+                    done();
+                });
+            });
+        });
+    });
+});
+
 describe('objectCopy in ingestion bucket', () => {
     const dataClient = data.client;
     const prevDataImplName = data.implName;

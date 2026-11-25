@@ -343,7 +343,7 @@ describe('Object Copy', () => {
                             // Should remove V4 streaming value 'aws-chunked'
                             // to be compatible with AWS behavior
                             assert.strictEqual(res.ContentEncoding,
-                              'base64,'
+                              'base64'
                             );
                             assert.strictEqual(res.Expires.toGMTString(),
                                 originalExpires.toGMTString());
@@ -484,7 +484,7 @@ describe('Object Copy', () => {
                       newContentDisposition);
                     // Should remove V4 streaming value 'aws-chunked'
                     // to be compatible with AWS behavior
-                    assert.strictEqual(res.ContentEncoding, 'gzip,');
+                    assert.strictEqual(res.ContentEncoding, 'gzip');
                     assert.strictEqual(res.Expires.toGMTString(),
                         newExpires.toGMTString());
                     done();
@@ -538,7 +538,7 @@ describe('Object Copy', () => {
                       assert.strictEqual(res.ContentDisposition,
                         originalContentDisposition);
                       assert.strictEqual(res.ContentEncoding,
-                        'base64,');
+                        'base64');
                       assert.strictEqual(res.Expires.toGMTString(),
                         originalExpires.toGMTString());
                       done();

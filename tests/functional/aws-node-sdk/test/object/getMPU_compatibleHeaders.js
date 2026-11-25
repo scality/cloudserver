@@ -21,7 +21,7 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
         let uploadId;
         const cacheControl = 'max-age=86400';
         const contentDisposition = 'attachment; filename="fname.ext";';
-        const contentEncoding = 'aws-chunked,gzip';
+        const contentEncoding = 'gzip,aws-chunked';
         // AWS Node SDK requires Date object, ISO-8601 string, or
         // a UNIX timestamp for Expires header
         const expires = new Date();
