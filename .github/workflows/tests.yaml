@@ -215,6 +215,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -226,6 +228,38 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
 
+      - name: Export build information
+        run: |
+          echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> $GITHUB_ENV
+
+          echo "EXTRA_LABELS<<EOF
+            git.repository=${{ github.repository }}
+            git.commit-sha=${{ github.sha }}
+            org.opencontainers.image.created={{commit_date 'YYYY-MM-DDTHH:mm:ssZ'}}
+            org.opencontainers.image.vendor=${{ github.repository_owner }}
+          EOF" >> $GITHUB_ENV
+
+          # dev pre-release of the next patch, e.g. 9.5.11-dev.5.sha-abc1234
+          LATEST_TAG=$(git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' --exclude '*-*')
+          MAJOR=$(echo "$LATEST_TAG" | cut -d. -f1)
+          MINOR=$(echo "$LATEST_TAG" | cut -d. -f2)
+          PATCH=$(echo "$LATEST_TAG" | cut -d. -f3)
+          COUNT=$(git rev-list --count "${LATEST_TAG}..HEAD")
+          # the count sorts dev builds; 'sha-' keeps the sha from parsing as a number
+          echo "DEV_TAG=${MAJOR}.${MINOR}.$((PATCH + 1))-dev.${COUNT}.sha-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          # CI jobs pull the images by commit sha
+          tags: |
+            type=raw,value=${{ env.DEV_TAG }}
+            type=raw,value=${{ github.sha }}
+          labels: ${{ env.EXTRA_LABELS }}
+          annotations: ${{ env.EXTRA_LABELS }}
+
       - name: Build and push cloudserver image
         uses: docker/build-push-action@v5
         with:
@@ -233,11 +267,11 @@ jobs:
           context: .
           target: production
           provenance: false
-          tags: |
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
-          labels: |
-            git.repository=${{ github.repository }}
-            git.commit-sha=${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          build-args: |
+            SOURCE_DATE_EPOCH=${{ env.SOURCE_DATE_EPOCH }}
           cache-from: type=gha,scope=cloudserver
           cache-to: type=gha,mode=max,scope=cloudserver
 
@@ -250,9 +284,11 @@ jobs:
           provenance: false
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.sha }}-testcoverage
-          labels: |
-            git.repository=${{ github.repository }}
-            git.commit-sha=${{ github.sha }}
+            ghcr.io/${{ github.repository }}:${{ env.DEV_TAG }}-testcoverage
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          build-args: |
+            SOURCE_DATE_EPOCH=${{ env.SOURCE_DATE_EPOCH }}
           cache-from: type=gha,scope=cloudserver
           cache-to: type=gha,mode=max,scope=cloudserver
 
@@ -264,11 +300,12 @@ jobs:
           provenance: false
           build-args: |
             CLOUDSERVER_VERSION=${{ github.sha }}
+            SOURCE_DATE_EPOCH=${{ env.SOURCE_DATE_EPOCH }}
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.sha }}-federation
-          labels: |
-            git.repository=${{ github.repository }}
-            git.commit-sha=${{ github.sha }}
+            ghcr.io/${{ github.repository }}:${{ env.DEV_TAG }}-federation
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha,scope=federation
           cache-to: type=gha,mode=max,scope=federation
 
@@ -311,7 +348,7 @@ jobs:
 
       - name: Push dashboards
         run: |
-          oras push ghcr.io/${{ github.repository }}/${{ github.event.repository.name }}-dashboards:${{ github.sha }} \
+          oras push ghcr.io/${{ github.repository }}/${{ github.event.repository.name }}-dashboards:${{ github.sha }},${{ env.DEV_TAG }} \
             dashboard.json:application/grafana-dashboard+json \
             alerts.yaml:application/prometheus-alerts+yaml
         working-directory: monitoring
