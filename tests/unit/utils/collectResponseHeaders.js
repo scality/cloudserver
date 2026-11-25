@@ -73,4 +73,21 @@ describe('Middleware: Collect Response Headers', () => {
         assert.strictEqual(headers['x-amz-scal-transition-in-progress'], undefined);
         assert.strictEqual(headers['x-amz-meta-scal-s3-transition-in-progress'], true);
     });
+
+    [
+        { stored: 'gzip', expected: 'gzip' },
+        { stored: 'gzip, br', expected: 'gzip, br' },
+        { stored: 'gzip,', expected: 'gzip' },
+        { stored: 'base64, ', expected: 'base64' },
+        { stored: ' gzip', expected: 'gzip' },
+        { stored: ',', expected: undefined },
+        { stored: '', expected: undefined },
+        { stored: undefined, expected: undefined },
+    ].forEach(({ stored, expected }) => {
+        it(`should return Content-Encoding ${JSON.stringify(expected)} ` +
+            `when ${JSON.stringify(stored)} is stored`, () => {
+            const headers = collectResponseHeaders({ 'content-encoding': stored });
+            assert.strictEqual(headers['Content-Encoding'], expected);
+        });
+    });
 });
