@@ -403,6 +403,59 @@ describe('non-versioned objectCopy', () => {
     });
 });
 
+describe('objectCopy Content-Language', () => {
+    const sourceContentLanguage = 'en-US';
+
+    before(done => {
+        cleanup();
+        const testPutObjectRequest = versioningTestUtils.createPutObjectRequest(
+            sourceBucketName, objectKey, objData[0]);
+        testPutObjectRequest.headers['content-language'] = sourceContentLanguage;
+        async.series(
+            [
+                callback => bucketPut(authInfo, putDestBucketRequest, log, callback),
+                callback => bucketPut(authInfo, putSourceBucketRequest, log, callback),
+                callback => objectPut(authInfo, testPutObjectRequest, undefined, log, callback),
+            ],
+            done,
+        );
+    });
+
+    after(() => {
+        cleanup();
+    });
+
+    [
+        {
+            desc: 'keep the source Content-Language with the COPY directive',
+            headers: {},
+            expected: sourceContentLanguage,
+        },
+        {
+            desc: 'store the request Content-Language with the REPLACE directive',
+            headers: { 'x-amz-metadata-directive': 'REPLACE', 'content-language': 'fr-FR' },
+            expected: 'fr-FR',
+        },
+        {
+            desc: 'drop the Content-Language with the REPLACE directive and no header',
+            headers: { 'x-amz-metadata-directive': 'REPLACE' },
+            expected: undefined,
+        },
+    ].forEach(({ desc, headers, expected }) => {
+        it(`should ${desc}`, done => {
+            const testObjectCopyRequest = _createObjectCopyRequest(destBucketName, headers);
+            objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+                assert.ifError(err);
+                metadata.getObjectMD(destBucketName, objectKey, {}, log, (err, md) => {
+                    assert.ifError(err);
+                    assert.strictEqual(md['content-language'], expected);
+                    done();
+                });
+            });
+        });
+    });
+});
+
 describe('objectCopy overheadField', () => {
     beforeEach(done => {
         cleanup();

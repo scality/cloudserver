@@ -90,4 +90,14 @@ describe('Middleware: Collect Response Headers', () => {
             assert.strictEqual(headers['Content-Encoding'], expected);
         });
     });
+
+    it('should return the stored Content-Language', () => {
+        const headers = collectResponseHeaders({ 'content-language': 'en-US' });
+        assert.strictEqual(headers['Content-Language'], 'en-US');
+    });
+
+    it('should not return Content-Language when none is stored', () => {
+        const headers = collectResponseHeaders({});
+        assert.strictEqual(headers['Content-Language'], undefined);
+    });
 });

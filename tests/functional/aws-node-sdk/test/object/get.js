@@ -245,7 +245,7 @@ describe('GET object', () => {
             });
 
         describe('Additional headers: [Cache-Control, Content-Disposition, ' +
-            'Content-Encoding, Expires, Accept-Ranges]', () => {
+            'Content-Encoding, Content-Language, Expires, Accept-Ranges]', () => {
             describe('if specified in put object request', () => {
                 before(async () => {
                     const params = {
@@ -254,6 +254,7 @@ describe('GET object', () => {
                         CacheControl: cacheControl,
                         ContentDisposition: contentDisposition,
                         ContentEncoding: contentEncoding,
+                        ContentLanguage: contentLanguage,
                         ContentType: contentType,
                         Expires: expires,
                     };
@@ -269,12 +270,22 @@ describe('GET object', () => {
                         // to be compatible with AWS behavior
                         assert.strictEqual(res.ContentEncoding,
                           'gzip');
+                        assert.strictEqual(res.ContentLanguage, contentLanguage);
                         assert.strictEqual(res.ContentType, contentType);
                         assert.strictEqual(res.Expires.toGMTString(),
                           new Date(expires).toGMTString());
                         assert.strictEqual(res.AcceptRanges, 'bytes');
                         return done();
                     }).catch(done);
+                });
+                it('should return the response-content-language override ' +
+                'instead of the stored Content-Language', async () => {
+                    const res = await s3.send(new GetObjectCommand({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        ResponseContentLanguage: 'fr-FR',
+                    }));
+                    assert.strictEqual(res.ContentLanguage, 'fr-FR');
                 });
             });
 

@@ -14,7 +14,7 @@ const bucketName = 'testgetmpubucket';
 const objectName = 'key';
 
 describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
-'Content-Encoding, Expires headers]', () => {
+'Content-Encoding, Content-Language, Expires headers]', () => {
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
@@ -22,6 +22,7 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
         const cacheControl = 'max-age=86400';
         const contentDisposition = 'attachment; filename="fname.ext";';
         const contentEncoding = 'gzip,aws-chunked';
+        const contentLanguage = 'en-US';
         // AWS Node SDK requires Date object, ISO-8601 string, or
         // a UNIX timestamp for Expires header
         const expires = new Date();
@@ -33,6 +34,7 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
                 CacheControl: cacheControl,
                 ContentDisposition: contentDisposition,
                 ContentEncoding: contentEncoding,
+                ContentLanguage: contentLanguage,
                 Expires: expires,
             };
             bucketUtil = new BucketUtility('default', sigCfg);
@@ -118,6 +120,7 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
                 assert.strictEqual(res.CacheControl, cacheControl);
                 assert.strictEqual(res.ContentDisposition, contentDisposition);
                 assert.strictEqual(res.ContentEncoding, 'gzip');
+                assert.strictEqual(res.ContentLanguage, contentLanguage);
                 assert.strictEqual(res.Expires.toGMTString(),
                     expires.toGMTString());
             });

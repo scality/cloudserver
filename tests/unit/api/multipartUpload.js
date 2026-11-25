@@ -566,10 +566,14 @@ describe('Multipart Upload API', () => {
         const partBody = Buffer.from('I am a part\n', 'utf8');
         initiateRequest.headers['x-amz-meta-stuff'] =
             'I am some user metadata';
+        const initiateWithLanguageRequest = {
+            ...initiateRequest,
+            headers: { ...initiateRequest.headers, 'content-language': 'en-US' },
+        };
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
-                initiateRequest, log, next),
+                initiateWithLanguageRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
@@ -642,6 +646,7 @@ describe('Multipart Upload API', () => {
                             assert(MD);
                             assert.strictEqual(MD['x-amz-meta-stuff'],
                                 'I am some user metadata');
+                            assert.strictEqual(MD['content-language'], 'en-US');
                             assert.strictEqual(MD.uploadId, testUploadId);
                             done();
                         });
