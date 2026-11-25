@@ -31,6 +31,7 @@ const originalMetadata = {
 const originalCacheControl = 'max-age=1337';
 const originalContentDisposition = 'attachment; filename="1337.txt";';
 const originalContentEncoding = 'base64,aws-chunked';
+const originalContentLanguage = 'en-US';
 const originalExpires = new Date(12345678);
 
 const originalTagKey = 'key1';
@@ -44,6 +45,7 @@ const newMetadata = {
 const newCacheControl = 'max-age=86400';
 const newContentDisposition = 'attachment; filename="fname.ext";';
 const newContentEncoding = 'gzip,aws-chunked';
+const newContentLanguage = 'fr-FR';
 const newExpires = new Date();
 
 const newTagKey = 'key2';
@@ -107,6 +109,7 @@ describe('Object Copy', () => {
             CacheControl: originalCacheControl,
             ContentDisposition: originalContentDisposition,
             ContentEncoding: originalContentEncoding,
+            ContentLanguage: originalContentLanguage,
             Expires: originalExpires,
             Tagging: originalTagging,
         })).then(res => {
@@ -331,7 +334,7 @@ describe('Object Copy', () => {
         });
 
         it('should also copy additional headers (CacheControl, ' +
-            'ContentDisposition, ContentEncoding, Expires) when copying an ' +
+            'ContentDisposition, ContentEncoding, ContentLanguage, Expires) when copying an ' +
             'object from a source bucket to a different destination bucket', done => {
               s3.send(new CopyObjectCommand({ Bucket: destBucketName, Key: destObjName,
                   CopySource: `${sourceBucketName}/${sourceObjName}` })).then(() => {
@@ -345,6 +348,8 @@ describe('Object Copy', () => {
                             assert.strictEqual(res.ContentEncoding,
                               'base64'
                             );
+                            assert.strictEqual(res.ContentLanguage,
+                              originalContentLanguage);
                             assert.strictEqual(res.Expires.toGMTString(),
                                 originalExpires.toGMTString());
                             done();
@@ -475,6 +480,7 @@ describe('Object Copy', () => {
                 CacheControl: newCacheControl,
                 ContentDisposition: newContentDisposition,
                 ContentEncoding: newContentEncoding,
+                ContentLanguage: newContentLanguage,
                 Expires: newExpires,
             })).then(() => {
                 s3.send(new GetObjectCommand({ Bucket: destBucketName,
@@ -485,6 +491,7 @@ describe('Object Copy', () => {
                     // Should remove V4 streaming value 'aws-chunked'
                     // to be compatible with AWS behavior
                     assert.strictEqual(res.ContentEncoding, 'gzip');
+                    assert.strictEqual(res.ContentLanguage, newContentLanguage);
                     assert.strictEqual(res.Expires.toGMTString(),
                         newExpires.toGMTString());
                     done();
@@ -496,6 +503,18 @@ describe('Object Copy', () => {
                 checkNoError(err);
                 done(err);
             });
+        });
+
+        it('should drop the Content-Language if replace is included as ' +
+            'metadata directive header and no Content-Language is specified', async () => {
+            await s3.send(new CopyObjectCommand({
+                Bucket: destBucketName,
+                Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                MetadataDirective: 'REPLACE',
+            }));
+            const res = await s3.send(new GetObjectCommand({ Bucket: destBucketName, Key: destObjName }));
+            assert.strictEqual(res.ContentLanguage, undefined);
         });
 
         it('should copy an object and the metadata if copy ' +
@@ -530,6 +549,7 @@ describe('Object Copy', () => {
                 CacheControl: newCacheControl,
                 ContentDisposition: newContentDisposition,
                 ContentEncoding: newContentEncoding,
+                ContentLanguage: newContentLanguage,
                 Expires: newExpires,
             })).then(() => {
                 s3.send(new GetObjectCommand({ Bucket: destBucketName, Key: destObjName })).then(res => {
@@ -539,6 +559,8 @@ describe('Object Copy', () => {
                         originalContentDisposition);
                       assert.strictEqual(res.ContentEncoding,
                         'base64');
+                      assert.strictEqual(res.ContentLanguage,
+                        originalContentLanguage);
                       assert.strictEqual(res.Expires.toGMTString(),
                         originalExpires.toGMTString());
                       done();

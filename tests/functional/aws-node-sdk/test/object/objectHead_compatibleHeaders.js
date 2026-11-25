@@ -8,13 +8,14 @@ const bucketName = 'objectheadtestheaders';
 const objectName = 'someObject';
 
 describe('HEAD object, compatibility headers [Cache-Control, ' +
-  'Content-Disposition, Content-Encoding, Expires]', () => {
+  'Content-Disposition, Content-Encoding, Content-Language, Expires]', () => {
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
         const cacheControl = 'max-age=86400';
         const contentDisposition = 'attachment; filename="fname.ext";';
         const contentEncoding = 'gzip,aws-chunked';
+        const contentLanguage = 'en-US';
         // AWS Node SDK requires Date object, ISO-8601 string, or
         // a UNIX timestamp for Expires header
         const expires = new Date();
@@ -39,6 +40,7 @@ describe('HEAD object, compatibility headers [Cache-Control, ' +
                     CacheControl: cacheControl,
                     ContentDisposition: contentDisposition,
                     ContentEncoding: contentEncoding,
+                    ContentLanguage: contentLanguage,
                     Expires: expires,
                 };
                 return s3.send(new PutObjectCommand(params));
@@ -63,6 +65,7 @@ describe('HEAD object, compatibility headers [Cache-Control, ' +
                   // to be compatible with AWS behavior
                   assert.strictEqual(res.ContentEncoding,
                     'gzip');
+                  assert.strictEqual(res.ContentLanguage, contentLanguage);
                   assert.strictEqual(res.Expires.toGMTString(),
                       expires.toGMTString());
                   return done();

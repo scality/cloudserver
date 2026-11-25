@@ -425,6 +425,37 @@ describe('objectPut API', () => {
         });
     });
 
+    [
+        { desc: 'with', contentLanguage: 'en-US' },
+        { desc: 'without', contentLanguage: undefined },
+    ].forEach(({ desc, contentLanguage }) => {
+        it(`should store the Content-Language of an object put ${desc} it`, done => {
+            const headers = {};
+            if (contentLanguage) {
+                headers['content-language'] = contentLanguage;
+            }
+            const testPutObjectRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers,
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+            }, postBody);
+
+            bucketPut(authInfo, testPutBucketRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                    assert.ifError(err);
+                    metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                        assert.ifError(err);
+                        assert.strictEqual(md['content-language'], contentLanguage);
+                        done();
+                    });
+                });
+            });
+        });
+    });
+
     it('If testingMode=true and the last-modified header is given, should set last-modified accordingly', done => {
         const imposedLastModified = '2024-07-19';
         const testPutObjectRequest = new DummyRequest({
