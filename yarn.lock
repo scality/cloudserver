@@ -1305,10 +1305,9 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@scality/arsenal@^8.6.0-0", "@scality/arsenal@^8.6.3":
-  version "8.6.3"
-  resolved "https://registry.yarnpkg.com/@scality/arsenal/-/arsenal-8.6.3.tgz#49d729706318c5e271b7ccae4ea2233af66df64a"
-  integrity sha512-If/jbSrx1dP93Va/9AE+OGqrAeaqfDt+6+ETeT3Wd2N3I3tbNa9J4ic4EQMwf8ndehnWX7imMfm7ZaWVW5oNwA==
+"@scality/arsenal@^8.6.0-0", "@scality/arsenal@git+https://github.com/scality/Arsenal#f0eeed2dc5f83354e974e4319593b7e5c6e18316":
+  version "8.6.6"
+  resolved "git+https://github.com/scality/Arsenal#f0eeed2dc5f83354e974e4319593b7e5c6e18316"
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
@@ -1323,7 +1322,7 @@
     "@opentelemetry/sdk-node" "^0.223.0"
     "@opentelemetry/sdk-trace-base" "^2.12.0"
     "@scality/hdclient" "^1.3.2"
-    "@smithy/node-http-handler" "^4.3.0"
+    "@smithy/node-http-handler" "^4.4.0"
     "@smithy/protocol-http" "^5.3.5"
     JSONStream "^1.3.5"
     agentkeepalive "^4.6.0"
@@ -1505,6 +1504,14 @@
     "@smithy/types" "^4.19.0"
     tslib "^2.6.2"
 
+"@smithy/core@^3.39.0":
+  version "3.41.1"
+  resolved "https://registry.yarnpkg.com/@smithy/core/-/core-3.41.1.tgz#2108d8ff39ab52bba4bcb2d06849beb3f554c2e0"
+  integrity sha512-24LyiHSY0R/MLcbTylurWXU6Uy4lzI6KJgsdzxkNnjT9/OLWc2zGPb/3k5AM1f0vcgCGrExanUG339t+TBiIrA==
+  dependencies:
+    "@smithy/types" "^4.20.0"
+    tslib "^2.6.2"
+
 "@smithy/credential-provider-imds@^4.5.2":
   version "4.5.2"
   resolved "https://registry.yarnpkg.com/@smithy/credential-provider-imds/-/credential-provider-imds-4.5.2.tgz#da3ea9636b5566b36b0761382d841a6d8fdde14f"
@@ -1575,13 +1582,22 @@
     "@smithy/types" "^3.7.2"
     tslib "^2.6.2"
 
-"@smithy/node-http-handler@^4.12.1", "@smithy/node-http-handler@^4.3.0":
+"@smithy/node-http-handler@^4.12.1":
   version "4.13.0"
   resolved "https://registry.yarnpkg.com/@smithy/node-http-handler/-/node-http-handler-4.13.0.tgz#cc26fbea5572a482b35cb43ca55c0d182e4eff70"
   integrity sha512-/GGcPoNJ2nzGytdAanpbx7mpp9Coa8LP+/Rpmbktr8YeLuIXs9B0SEz+X3AeonHdyzOIFJdKbN7jOZ+Tj+pMGw==
   dependencies:
     "@smithy/core" "^3.37.0"
     "@smithy/types" "^4.19.0"
+    tslib "^2.6.2"
+
+"@smithy/node-http-handler@^4.4.0":
+  version "4.14.2"
+  resolved "https://registry.yarnpkg.com/@smithy/node-http-handler/-/node-http-handler-4.14.2.tgz#b3b44ed33af388322f13a1fd48694d1f9d490507"
+  integrity sha512-i1uORV1v3qBqP43ayRKzIdm1q5x14tf8N4Dd06/QUX1Szm6VxHMrTsu20X5E63UFsaNZCRjI4SXG0jDmqYa+3w==
+  dependencies:
+    "@smithy/core" "^3.39.0"
+    "@smithy/types" "^4.20.0"
     tslib "^2.6.2"
 
 "@smithy/protocol-http@^1.1.0":
@@ -1672,6 +1688,13 @@
   version "4.19.0"
   resolved "https://registry.yarnpkg.com/@smithy/types/-/types-4.19.0.tgz#a0dd9c9d7b2a070fc7c3d69efedea8404b3646be"
   integrity sha512-r7jh49VJxGerfAcTQA6gXcKc+98zOp/tqRwzYjgOE+iSQsP6cEU1hq2QzbuipmP68QtYdY9wKEhiCQZIzHgZ4Q==
+  dependencies:
+    tslib "^2.6.2"
+
+"@smithy/types@^4.20.0":
+  version "4.20.0"
+  resolved "https://registry.yarnpkg.com/@smithy/types/-/types-4.20.0.tgz#20dee95d543f7c89682fbe73c765f5f0ef3a2c12"
+  integrity sha512-lCA6QG22dPk9ecHbv91jDQZsmtPUjdS1aE2Il6NNPqe7DrYc0dZQi6DhcESk2KYXH2sp5xbAcGdYMZDFnuzA2A==
   dependencies:
     tslib "^2.6.2"
 
@@ -4095,14 +4118,13 @@ http2-wrapper@^1.0.0-beta.5.2:
 
 "httpagent@git+https://github.com/scality/httpagent#1.1.0":
   version "1.1.0"
-  resolved "git+https://github.com/scality/httpagent#8f9958eb9cde086db7819a86582fba640a5f8876"
+  resolved "https://codeload.github.com/scality/httpagent/tar.gz/8f9958eb9cde086db7819a86582fba640a5f8876"
   dependencies:
     agentkeepalive "^4.5.0"
 
 "httpagent@git+https://github.com/scality/httpagent#1.1.1":
   version "1.1.1"
-  uid "7c6ef8be1cd89b56651f4a922ea5c92d7673ee2e"
-  resolved "git+https://github.com/scality/httpagent#7c6ef8be1cd89b56651f4a922ea5c92d7673ee2e"
+  resolved "https://codeload.github.com/scality/httpagent/tar.gz/7c6ef8be1cd89b56651f4a922ea5c92d7673ee2e"
   dependencies:
     agentkeepalive "^4.6.0"
 
