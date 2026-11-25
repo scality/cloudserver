@@ -306,6 +306,34 @@ describe('objectPut API', () => {
         });
     });
 
+    [
+        { sent: 'gzip,aws-chunked', stored: 'gzip' },
+        { sent: 'aws-chunked,gzip', stored: 'gzip' },
+        { sent: 'aws-chunked', stored: '' },
+    ].forEach(({ sent, stored }) => {
+        it(`should store Content-Encoding ${JSON.stringify(sent)} as ${JSON.stringify(stored)}`, done => {
+            const testPutObjectRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { 'content-encoding': sent },
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+            }, postBody);
+
+            bucketPut(authInfo, testPutBucketRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                    assert.ifError(err);
+                    metadata.getObjectMD(bucketName, objectName, {}, log, (err, md) => {
+                        assert.ifError(err);
+                        assert.strictEqual(md['content-encoding'], stored);
+                        done();
+                    });
+                });
+            });
+        });
+    });
+
     it('should successfully put an object with legal hold ON', done => {
         const request = new DummyRequest({
             bucketName,

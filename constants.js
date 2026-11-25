@@ -255,6 +255,10 @@ const constants = {
         'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
         'STREAMING-AWS4-HMAC-SHA256-PAYLOAD',
     ]),
+    // Content-Encoding element added by clients for V4 streaming uploads,
+    // which is removed before storing the object, as AWS does. See:
+    // http://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-streaming.html
+    awsChunkedContentEncoding: 'aws-chunked',
     ipv4Regex: /^(\d{1,3}\.){3}\d{1,3}(\/(3[0-2]|[12]?\d))?$/,
     ipv6Regex: /^([\da-f]{1,4}:){7}[\da-f]{1,4}$/i,
     // The AWS assumed Role resource type

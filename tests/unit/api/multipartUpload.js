@@ -162,7 +162,7 @@ async function _uploadMpuObject(params = {}) {
     const _completeMultipartUpload = (...params) => util.promisify(cb =>
         completeMultipartUpload(...params, (err, xml, headers) => cb(err, { xml, headers })))();
 
-    const headers = { ...initiateRequest.headers };
+    const headers = { ...initiateRequest.headers, ...params.headers };
     if (params.location) {
         headers[constants.objectLocationConstraintHeader] = params.location;
     }
@@ -735,6 +735,13 @@ describe('Multipart Upload API', () => {
                     });
             });
         });
+    });
+
+    it('should store Content-Encoding without aws-chunked or a leftover separator', async () => {
+        await _bucketPut(authInfo, bucketPutRequest, log);
+        await _uploadMpuObject({ headers: { 'content-encoding': 'gzip,aws-chunked' } });
+        const md = metadata.keyMaps.get(bucketName).get(objectKey);
+        assert.strictEqual(md['content-encoding'], 'gzip');
     });
 
     it('should return an error if a complete multipart upload' +

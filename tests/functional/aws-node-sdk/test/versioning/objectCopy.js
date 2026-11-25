@@ -263,7 +263,7 @@ describe('Object Version Copy', () => {
             const res = await s3.send(new GetObjectCommand({ Bucket: destBucketName, Key: destObjName }));
             assert.strictEqual(res.CacheControl, originalCacheControl);
             assert.strictEqual(res.ContentDisposition, originalContentDisposition);
-            assert.strictEqual(res.ContentEncoding, 'base64,');
+            assert.strictEqual(res.ContentEncoding, 'base64');
             assert.strictEqual(res.Expires.toGMTString(), originalExpires.toGMTString());
         });
 
@@ -332,7 +332,7 @@ describe('Object Version Copy', () => {
             const res = await s3.send(new GetObjectCommand({ Bucket: destBucketName, Key: destObjName }));
             assert.strictEqual(res.CacheControl, newCacheControl);
             assert.strictEqual(res.ContentDisposition, newContentDisposition);
-            assert.strictEqual(res.ContentEncoding, 'gzip,');
+            assert.strictEqual(res.ContentEncoding, 'gzip');
             assert.strictEqual(res.Expires.toGMTString(), newExpires.toGMTString());
         });
 
@@ -361,7 +361,7 @@ describe('Object Version Copy', () => {
             const res = await s3.send(new GetObjectCommand({ Bucket: destBucketName, Key: destObjName }));
             assert.strictEqual(res.CacheControl, originalCacheControl);
             assert.strictEqual(res.ContentDisposition, originalContentDisposition);
-            assert.strictEqual(res.ContentEncoding, 'base64,');
+            assert.strictEqual(res.ContentEncoding, 'base64');
             assert.strictEqual(res.Expires.toGMTString(), originalExpires.toGMTString());
         });
 
