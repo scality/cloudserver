@@ -7,6 +7,7 @@ const { parseString } = require('xml2js');
 const { models } = require('arsenal');
 const { ObjectMD, ObjectMDChecksum } = models;
 const { algorithms } = require('../../../lib/api/apiUtils/integrity/validateChecksums');
+const { config } = require('../../../lib/Config');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
@@ -857,5 +858,58 @@ describe('objectGet API - x-amz-checksum-mode', () => {
                 });
             }),
         );
+    });
+
+    describe('with integrity checks disabled', () => {
+        let originalIntegrityChecks;
+
+        beforeEach(() => {
+            originalIntegrityChecks = config.integrityChecks;
+            config.integrityChecks = { enabled: false };
+        });
+
+        afterEach(() => {
+            config.integrityChecks = originalIntegrityChecks;
+        });
+
+        // The object carries a checksum stored before the flag was turned off.
+        const getWithChecksumMode = (checksumMode, cb) => {
+            const md = new ObjectMD(mdColdHelper.baseMd).setChecksum(
+                new ObjectMDChecksum('sha256', expectedDigests.sha256, 'FULL_OBJECT'),
+            );
+            mdColdHelper.putBucketMock(bucketName, null, () =>
+                mdColdHelper.putObjectMock(bucketName, objectName, md, () => {
+                    const req = {
+                        bucketName,
+                        namespace,
+                        objectKey: objectName,
+                        headers: { 'x-amz-checksum-mode': checksumMode },
+                        url: `/${bucketName}/${objectName}`,
+                        query: {},
+                    };
+                    objectGet(authInfo, req, false, log, cb);
+                }),
+            );
+        };
+
+        ['DISABLED', 'foo', ''].forEach(checksumMode => {
+            it(`should ignore x-amz-checksum-mode "${checksumMode}" and return no checksum headers`, done => {
+                getWithChecksumMode(checksumMode, (err, _locator, headers) => {
+                    assert.ifError(err);
+                    checksumAlgorithms.forEach(({ header }) => assert.strictEqual(headers[header], undefined));
+                    assert.strictEqual(headers['x-amz-checksum-type'], undefined);
+                    done();
+                });
+            });
+        });
+
+        it('should still return the stored checksum when mode is ENABLED', done => {
+            getWithChecksumMode('ENABLED', (err, _locator, headers) => {
+                assert.ifError(err);
+                assert.strictEqual(headers['x-amz-checksum-sha256'], expectedDigests.sha256);
+                assert.strictEqual(headers['x-amz-checksum-type'], 'FULL_OBJECT');
+                done();
+            });
+        });
     });
 });

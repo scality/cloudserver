@@ -160,6 +160,30 @@ describe('with checksums disabled', () => {
         });
     });
 
+    describe('x-amz-checksum-mode', () => {
+        const key = 'checksum-mode';
+
+        before(async () => {
+            await s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body }));
+        });
+
+        // Enabled, any value other than ENABLED is InvalidArgument.
+        ['DISABLED', 'foo'].forEach(checksumMode => {
+            it(`should ignore ChecksumMode ${checksumMode} on GET and HEAD`, async () => {
+                const get = await s3.send(
+                    new GetObjectCommand({ Bucket: bucket, Key: key, ChecksumMode: checksumMode }),
+                );
+                assertNoChecksum(get, `GetObject with ChecksumMode ${checksumMode}`);
+                assert.deepStrictEqual(Buffer.from(await get.Body.transformToByteArray()), body);
+
+                const head = await s3.send(
+                    new HeadObjectCommand({ Bucket: bucket, Key: key, ChecksumMode: checksumMode }),
+                );
+                assertNoChecksum(head, `HeadObject with ChecksumMode ${checksumMode}`);
+            });
+        });
+    });
+
     describe('CopyObject', () => {
         it('should not carry a checksum to the destination', async () => {
             await s3.send(new PutObjectCommand({ Bucket: bucket, Key: 'copy-src', Body: body }));
