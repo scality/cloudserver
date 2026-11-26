@@ -182,6 +182,16 @@ describe('with checksums disabled', () => {
                 assertNoChecksum(head, `HeadObject with ChecksumMode ${checksumMode}`);
             });
         });
+
+        it('should accept ChecksumMode enabled in lower case on GET and HEAD', async () => {
+            // Nothing is stored when checksums are disabled, so there is no checksum to return.
+            const get = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key, ChecksumMode: 'enabled' }));
+            assertNoChecksum(get, 'GetObject with ChecksumMode enabled');
+            assert.deepStrictEqual(Buffer.from(await get.Body.transformToByteArray()), body);
+
+            const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key, ChecksumMode: 'enabled' }));
+            assertNoChecksum(head, 'HeadObject with ChecksumMode enabled');
+        });
     });
 
     describe('CopyObject', () => {
