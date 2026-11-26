@@ -6591,9 +6591,9 @@ arraybuffer.prototype.slice@^1.0.4:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.4.28":
+"arsenal@git+https://github.com/scality/Arsenal#bugfix/ARSN-682/resolve-client-ip-from-trusted-end-of-xff":
   version "8.4.28"
-  resolved "git+https://github.com/scality/Arsenal#d5e2bf87c45e961e702483786277ef56e3a93f0f"
+  resolved "git+https://github.com/scality/Arsenal#42f0ad9e4f55f58867704fe7391c9a2f5270990c"
   dependencies:
     "@aws-sdk/client-kms" "^3.975.0"
     "@aws-sdk/client-s3" "^3.975.0"
