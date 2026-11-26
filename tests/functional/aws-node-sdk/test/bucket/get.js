@@ -10,6 +10,8 @@ const { generateToken, decryptToken } = require('../../../../../lib/api/apiUtils
 const AWS = require('aws-sdk');
 const { IAM } = AWS;
 const getConfig = require('../support/config');
+const { initMetadata, fakeMetadataArchive } = require('../utils/init');
+const { hasColdStorage } = require('../../lib/utility/test-utils');
 const { config } = require('../../../../../lib/Config');
 
 const isVaultScality = config.backends.auth !== 'mem';
@@ -520,7 +522,103 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
             req.send();
         });
 
+        // lists with the given operation (listObjects, listObjectsV2 or listObjectVersions); the
+        // header is not sent when headerValue is undefined
+        const listWithOptionalAttributes = (
+            s3, operation, Bucket, headerValue, extraParams = {},
+        ) => new Promise((resolve, reject) => {
+            let rawXml = '';
+            const req = s3[operation]({ Bucket, ...extraParams });
+            req.on('build', () => {
+                if (headerValue !== undefined) {
+                    req.httpRequest.headers['x-amz-optional-object-attributes'] = headerValue;
+                }
+            });
+            req.on('httpData', chunk => { rawXml += chunk; });
+            req.on('error', err => reject(err));
+            req.on('success', () => {
+                parseString(rawXml, (err, parsedXml) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve({ parsedXml, rawXml });
+                });
+            });
+            req.send();
+        });
+
+        const archiveInfo = { archiveId: 'archive-1', archiveVersion: 1 };
+        const hour = 60 * 60 * 1000;
+        const day = 24 * hour;
+        const expiryDate = new Date(Date.now() + day).toISOString();
+        const archiveStates = {
+            'archived-never-restored': () => ({ archiveInfo }),
+            'restore-in-progress': () => ({
+                archiveInfo,
+                restoreRequestedAt: new Date().toISOString(),
+                restoreRequestedDays: 2,
+            }),
+            restored: () => {
+                const now = Date.now();
+                return {
+                    archiveInfo,
+                    restoreRequestedAt: new Date(now - day).toISOString(),
+                    restoreRequestedDays: 2,
+                    restoreCompletedAt: new Date(now - day + hour).toISOString(),
+                    restoreWillExpireAt: expiryDate,
+                };
+            },
+        };
+
+        // puts an object and, unless the state is 'never-archived', sets its archive metadata
+        const putObjectInState = async (s3, Key, state) => {
+            const { VersionId } = await s3.putObject({ Bucket: bucketName, Key }).promise();
+            if (state === 'never-archived') {
+                return;
+            }
+            await new Promise((resolve, reject) => fakeMetadataArchive(
+                bucketName, Key, VersionId, archiveStates[state](), err => (err ? reject(err) : resolve())));
+        };
+
+        const allStates = ['never-archived', ...Object.keys(archiveStates)];
+
+        // Archive and restore states only exist where cold storage is supported: without a
+        // Transition lifecycle rule (S3C), no object is ever archived. Faking an archive there also
+        // breaks the cleanup of the bucket: the metadata update of a non-versioned object is sent
+        // with an empty versionId, which gives the master a new version id that the deletion of
+        // each listed version leaves behind.
+        const itCold = hasColdStorage ? it : it.skip;
+
+        // gives the object the 'restored' state where cold storage is supported, else leaves it as is
+        const restoreIfColdStorage = async (Key, VersionId) => {
+            if (!hasColdStorage) {
+                return;
+            }
+            await new Promise((resolve, reject) => fakeMetadataArchive(
+                bucketName, Key, VersionId, archiveStates.restored(), err => (err ? reject(err) : resolve())));
+        };
+
+        // asserts the RestoreStatus of the entries made by putObjectInState for the four states
+        const assertRestoreStatusByState = entries => {
+            const byKey = {};
+            entries.forEach(entry => { byKey[entry.Key[0]] = entry; });
+            assert.deepStrictEqual(Object.keys(byKey).sort(), [...allStates].sort());
+            assert.strictEqual(byKey['never-archived'].RestoreStatus, undefined);
+            assert.strictEqual(byKey['archived-never-restored'].RestoreStatus, undefined);
+            assert.deepStrictEqual(byKey['restore-in-progress'].RestoreStatus, [{ IsRestoreInProgress: ['true'] }]);
+            assert.deepStrictEqual(byKey.restored.RestoreStatus, [{
+                IsRestoreInProgress: ['false'],
+                RestoreExpiryDate: [expiryDate],
+            }]);
+        };
+
         describe('x-amz-optional-object-attributes', () => {
+            // initMetadata returns what metadata.setup returns, a promise with MongoDB: it must not be
+            // returned to mocha, which refuses a hook that takes a callback and returns a promise
+            before(done => {
+                initMetadata(done);
+            });
+
             it('should reject a malformed header value with 400 InvalidArgument', async () => {
                 const s3 = bucketUtil.s3;
                 try {
@@ -676,12 +774,9 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 assert.deepStrictEqual(contents[0]['x-amz-meta-size'], ['large']);
             });
 
-            it('should return IsRestoreInProgress=false and no RestoreExpiryDate for non-restored object', async () => {
+            it('should not return RestoreStatus for an object that was never archived', async () => {
                 const s3 = bucketUtil.s3;
-                await s3.putObject({
-                    Bucket: bucketName,
-                    Key: 'restore-status-object',
-                }).promise();
+                await putObjectInState(s3, 'restore-status-object', 'never-archived');
 
                 const { parsedXml } = await listObjectsV2WithOptionalAttributes(
                     s3,
@@ -692,12 +787,121 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const contents = parsedXml.ListBucketResult.Contents;
                 assert.strictEqual(contents.length, 1);
                 assert.strictEqual(contents[0].Key[0], 'restore-status-object');
+                assert.strictEqual(contents[0].RestoreStatus, undefined);
+            });
 
+            itCold('should not return RestoreStatus for an archived object that was never restored', async () => {
+                const s3 = bucketUtil.s3;
+                await putObjectInState(s3, 'archived-object', 'archived-never-restored');
+
+                const { parsedXml } = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'RestoreStatus',
+                );
+
+                const contents = parsedXml.ListBucketResult.Contents;
+                assert.strictEqual(contents.length, 1);
+                assert.strictEqual(contents[0].Key[0], 'archived-object');
+                assert.strictEqual(contents[0].RestoreStatus, undefined);
+            });
+
+            itCold('should return IsRestoreInProgress=true and no RestoreExpiryDate while a restore is in progress',
+            async () => {
+                const s3 = bucketUtil.s3;
+                await putObjectInState(s3, 'restoring-object', 'restore-in-progress');
+
+                const { parsedXml } = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'RestoreStatus',
+                );
+
+                const contents = parsedXml.ListBucketResult.Contents;
+                assert.strictEqual(contents.length, 1);
+                assert.strictEqual(contents[0].Key[0], 'restoring-object');
+                assert.deepStrictEqual(contents[0].RestoreStatus, [{ IsRestoreInProgress: ['true'] }]);
+            });
+
+            itCold('should return IsRestoreInProgress=false and an ISO 8601 RestoreExpiryDate for a restored object',
+            async () => {
+                const s3 = bucketUtil.s3;
+                await putObjectInState(s3, 'restored-object', 'restored');
+
+                const { parsedXml } = await listObjectsV2WithOptionalAttributes(
+                    s3,
+                    bucketName,
+                    'RestoreStatus',
+                );
+
+                const contents = parsedXml.ListBucketResult.Contents;
+                assert.strictEqual(contents.length, 1);
+                assert.strictEqual(contents[0].Key[0], 'restored-object');
                 const restoreStatus = contents[0].RestoreStatus;
-                assert.ok(Array.isArray(restoreStatus));
                 assert.strictEqual(restoreStatus.length, 1);
                 assert.deepStrictEqual(restoreStatus[0].IsRestoreInProgress, ['false']);
-                assert.strictEqual(restoreStatus[0].RestoreExpiryDate, undefined);
+                assert.strictEqual(restoreStatus[0].RestoreExpiryDate.length, 1);
+                assert.match(restoreStatus[0].RestoreExpiryDate[0], /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+                assert.strictEqual(restoreStatus[0].RestoreExpiryDate[0], expiryDate);
+            });
+
+            itCold('should return RestoreStatus only on objects with a restore state in ListObjects v1', async () => {
+                const s3 = bucketUtil.s3;
+                for (const state of allStates) {
+                    await putObjectInState(s3, state, state);
+                }
+
+                const { parsedXml } = await listWithOptionalAttributes(
+                    s3,
+                    'listObjects',
+                    bucketName,
+                    'RestoreStatus',
+                );
+
+                assertRestoreStatusByState(parsedXml.ListBucketResult.Contents);
+            });
+
+            itCold('should return RestoreStatus only on versions with a restore state in ListObjectVersions',
+            async () => {
+                const s3 = bucketUtil.s3;
+                await s3.putBucketVersioning({
+                    Bucket: bucketName,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }).promise();
+                for (const state of allStates) {
+                    await putObjectInState(s3, state, state);
+                }
+                await s3.deleteObject({ Bucket: bucketName, Key: 'never-archived' }).promise();
+
+                const { parsedXml } = await listWithOptionalAttributes(
+                    s3,
+                    'listObjectVersions',
+                    bucketName,
+                    'RestoreStatus',
+                );
+
+                const result = parsedXml.ListVersionsResult;
+                assertRestoreStatusByState(result.Version);
+                assert.strictEqual(result.DeleteMarker.length, 1);
+                assert.strictEqual(result.DeleteMarker[0].RestoreStatus, undefined);
+            });
+
+            itCold('should not return RestoreStatus for a restored object when the header is absent', async () => {
+                const s3 = bucketUtil.s3;
+                await putObjectInState(s3, 'restored-object', 'restored');
+
+                const { parsedXml, rawXml } = await listWithOptionalAttributes(
+                    s3,
+                    'listObjectsV2',
+                    bucketName,
+                    undefined,
+                );
+
+                const contents = parsedXml.ListBucketResult.Contents;
+                assert.strictEqual(contents.length, 1);
+                assert.strictEqual(contents[0].Key[0], 'restored-object');
+                assert.strictEqual(contents[0].RestoreStatus, undefined);
+                assert.ok(!rawXml.includes('RestoreStatus'));
             });
 
             it('should return each version\'s own user-metadata in ListObjectVersions', async () => {
@@ -758,11 +962,12 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                     VersioningConfiguration: { Status: 'Enabled' },
                 }).promise();
 
-                await s3.putObject({
+                const { VersionId } = await s3.putObject({
                     Bucket: bucketName,
                     Key: 'delete-marker-object',
                     Metadata: { color: 'red' },
                 }).promise();
+                await restoreIfColdStorage('delete-marker-object', VersionId);
                 await s3.deleteObject({
                     Bucket: bucketName,
                     Key: 'delete-marker-object',
@@ -792,7 +997,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 assert.strictEqual(result.Version.length, 1);
                 assert.strictEqual(result.Version[0].Key[0], 'delete-marker-object');
                 assert.deepStrictEqual(result.Version[0]['x-amz-meta-color'], ['red']);
-                assert.strictEqual(result.Version[0].RestoreStatus.length, 1);
+                assert.strictEqual(result.Version[0].RestoreStatus?.length, hasColdStorage ? 1 : undefined);
 
                 assert.strictEqual(result.DeleteMarker.length, 1);
                 assert.strictEqual(result.DeleteMarker[0].Key[0], 'delete-marker-object');
@@ -890,11 +1095,12 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
 
             it('should coexist Owner with user-metadata in fetch-owner=true and keep schema order', async () => {
                 const s3 = bucketUtil.s3;
-                await s3.putObject({
+                const { VersionId } = await s3.putObject({
                     Bucket: bucketName,
                     Key: 'fetch-owner-object',
                     Metadata: { color: 'red' },
                 }).promise();
+                await restoreIfColdStorage('fetch-owner-object', VersionId);
 
                 const { parsedXml, rawXml } = await listObjectsV2WithOptionalAttributes(
                     s3,
@@ -909,7 +1115,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 assert.ok(Array.isArray(contents[0].Owner));
                 assert.strictEqual(contents[0].Owner.length, 1);
                 assert.deepStrictEqual(contents[0]['x-amz-meta-color'], ['red']);
-                assert.strictEqual(contents[0].RestoreStatus.length, 1);
+                assert.strictEqual(contents[0].RestoreStatus?.length, hasColdStorage ? 1 : undefined);
 
                 const contentsBlock = rawXml.match(/<Contents>([\s\S]*?)<\/Contents>/)[1];
                 const expectedOrder = [
@@ -921,7 +1127,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                     'RestoreStatus',
                     'x-amz-meta-color',
                     'StorageClass',
-                ];
+                ].filter(tag => hasColdStorage || tag !== 'RestoreStatus');
                 const positions = expectedOrder.map(tag => ({
                     tag,
                     pos: contentsBlock.indexOf(`<${tag}>`),
