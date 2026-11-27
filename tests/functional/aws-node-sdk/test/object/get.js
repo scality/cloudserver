@@ -1361,5 +1361,68 @@ describe('GET object checksum mode', () => {
                 },
             );
         });
+
+        ['enabled', 'Enabled'].forEach(mode => {
+            it(`should return ChecksumCRC32 and ChecksumType when ChecksumMode is ${mode}`, async () => {
+                await s3.send(
+                    new PutObjectCommand({
+                        Bucket: checksumBucket,
+                        Key: checksumKey,
+                        Body: body,
+                        ChecksumAlgorithm: 'CRC32',
+                    }),
+                );
+
+                const getRes = await s3.send(
+                    new GetObjectCommand({
+                        Bucket: checksumBucket,
+                        Key: checksumKey,
+                        ChecksumMode: mode,
+                    }),
+                );
+                assert.strictEqual(getRes.ChecksumCRC32, expectedDigests.crc32);
+                assert.strictEqual(getRes.ChecksumType, 'FULL_OBJECT');
+            });
+        });
+
+        it('should return the range and no checksum when ChecksumMode is enabled with a Range', async () => {
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: checksumBucket,
+                    Key: checksumKey,
+                    Body: body,
+                    ChecksumAlgorithm: 'CRC32',
+                }),
+            );
+
+            const getRes = await s3.send(
+                new GetObjectCommand({
+                    Bucket: checksumBucket,
+                    Key: checksumKey,
+                    ChecksumMode: 'enabled',
+                    Range: 'bytes=0-3',
+                }),
+            );
+            await getRes.Body.transformToByteArray();
+            assert.strictEqual(getRes.$metadata.httpStatusCode, 206);
+            assert.strictEqual(getRes.ContentLength, 4);
+            assert.strictEqual(getRes.ChecksumCRC32, undefined);
+        });
+
+        it('should return NoSuchKey when ChecksumMode is enabled and the key does not exist', async () => {
+            await assert.rejects(
+                s3.send(
+                    new GetObjectCommand({
+                        Bucket: checksumBucket,
+                        Key: 'checksum-key-never-put',
+                        ChecksumMode: 'enabled',
+                    }),
+                ),
+                err => {
+                    assert.strictEqual(err.name, 'NoSuchKey');
+                    return true;
+                },
+            );
+        });
     });
 });
