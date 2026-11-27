@@ -336,7 +336,7 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
 
             it(
                 `should copy ${isEmptyObj ? 'an empty ' : ''}null version from one AWS backend versioning ` +
-                    `suspended bucket to  another versioning suspended bucket with ${directive} directive`,
+                    `suspended bucket to another versioning suspended bucket with ${directive} directive`,
                 done => {
                     Object.assign(testParams, {
                         sourceVersioningState: 'Suspended',
@@ -391,7 +391,7 @@ describeSkipIfNotMultiple('AWS backend object copy with versioning', function te
 
         it(
             'versioning not configured: if copy object to a pre-existing object on AWS backend, ' +
-                'metadata should be overwritten but data of  previous version in AWS should not be deleted',
+                'metadata should be overwritten but data of previous version in AWS should not be deleted',
             function itF(done) {
                 const destKey = `destkey-${genUniqID()}`;
                 const testParams = {

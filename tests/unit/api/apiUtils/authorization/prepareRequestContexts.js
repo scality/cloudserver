@@ -138,7 +138,7 @@ describe('prepareRequestContexts', () => {
 
     it(
         'should return s3:GetObject, s3:GetObjectVersion and scality:GetObjectArchiveInfo ' +
-            ' for headObject with x-amz-scal-archive-info header',
+            'for headObject with x-amz-scal-archive-info header',
         () => {
             const apiMethod = 'objectHead';
             const request = makeRequest({

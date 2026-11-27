@@ -84,14 +84,17 @@ describe('getReplicationConfiguration function', () => {
             checkError(createReplicationXML(prop), null, done));
     });
 
-    it(`should accept replication configuration without 'Bucket' when there
-    is no Scality destination in the Storage Class`, done => {
-        const xml = createReplicationXML('Bucket', {
-            StorageClass: 'us-east-2',
-            Role: 'arn:aws:iam::account-id:role/src-resource',
-        });
-        checkError(xml, null, done);
-    });
+    it(
+        "should accept replication configuration without 'Bucket' when there " +
+            'is no Scality destination in the Storage Class',
+        done => {
+            const xml = createReplicationXML('Bucket', {
+                StorageClass: 'us-east-2',
+                Role: 'arn:aws:iam::account-id:role/src-resource',
+            });
+            checkError(xml, null, done);
+        },
+    );
 
     it("should create a rule 'ID' if omitted from the replication configuration", done => {
         const xml = createReplicationXML('ID');

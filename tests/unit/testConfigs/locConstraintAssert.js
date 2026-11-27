@@ -33,16 +33,14 @@ function getAzureDetails(replaceParams) {
     );
 }
 
-// FIXME: most of tests using a line-wrapped regexp are broken,
-// because such regexp is converted to a string which does not enforce
-// the check of the message. A more durable solution would be use
-// 'joi' for config parsing.
-
 describe('locationConstraintAssert', () => {
     it('should throw error if locationConstraints is not an object', () => {
-        assert.throws(() => {
-            locationConstraintAssert('');
-        }, /bad config: locationConstraints must be an object/);
+        assert.throws(
+            () => {
+                locationConstraintAssert('');
+            },
+            { message: 'bad config: locationConstraints must be an object' },
+        );
     });
 
     it('should throw error if any location constraint is not an object', () => {
@@ -63,7 +61,7 @@ describe('locationConstraintAssert', () => {
             () => {
                 locationConstraintAssert({ 'scality-east': locationConstraint });
             },
-            /bad config: locationConstraints[region].type is mandatory/ + /and must be a string/,
+            { message: 'bad config: locationConstraints[region].type is mandatory and must be a string' },
         );
     });
 
@@ -73,7 +71,7 @@ describe('locationConstraintAssert', () => {
             () => {
                 locationConstraintAssert({ 'scality-east': locationConstraint });
             },
-            /bad config: locationConstraints[region].type must be/ + /one of mem,file,scality,tlp,crr/,
+            { message: /^bad config: locationConstraints\[region\]\.type must be one of / },
         );
     });
 
@@ -83,17 +81,22 @@ describe('locationConstraintAssert', () => {
             () => {
                 locationConstraintAssert({ 'scality-east': locationConstraint });
             },
-            /bad config: locationConstraints[region].legacyAwsBehavior / + /is mandatory and must be a boolean/,
+            {
+                message: 'bad config: locationConstraints[region].legacyAwsBehavior is mandatory and must be a boolean',
+            },
         );
     });
 
     it('should throw error if details is not an object', () => {
-        const locationConstraint = new LocationConstraint('scality', 'locId', false, 42);
+        const usEast1 = new LocationConstraint(undefined, 'locId1');
+        const locationConstraint = new LocationConstraint('scality', 'locId2');
+        // the constructor merges details into defaults: set a non-object after it
+        locationConstraint.details = 42;
         assert.throws(
             () => {
-                locationConstraintAssert({ 'scality-east': locationConstraint });
+                locationConstraintAssert({ 'us-east-1': usEast1, 'scality-east': locationConstraint });
             },
-            /bad config: locationConstraints[region].details is / + /mandatory and must be an object/,
+            { message: 'bad config: locationConstraints[region].details is mandatory and must be an object' },
         );
     });
 
@@ -101,9 +104,12 @@ describe('locationConstraintAssert', () => {
         const locationConstraint = new LocationConstraint('scality', 'locId', false, {
             awsEndpoint: 42,
         });
-        assert.throws(() => {
-            locationConstraintAssert({ 'scality-east': locationConstraint });
-        }, /bad config: awsEndpoint must be a string/);
+        assert.throws(
+            () => {
+                locationConstraintAssert({ 'scality-east': locationConstraint });
+            },
+            { message: 'bad config: awsEndpoint must be a string' },
+        );
     });
 
     it('should throw error if bucketName is not a string', () => {
@@ -111,9 +117,12 @@ describe('locationConstraintAssert', () => {
             awsEndpoint: 's3.amazonaws.com',
             bucketName: 42,
         });
-        assert.throws(() => {
-            locationConstraintAssert({ 'scality-east': locationConstraint });
-        }, /bad config: bucketName must be a string/);
+        assert.throws(
+            () => {
+                locationConstraintAssert({ 'scality-east': locationConstraint });
+            },
+            { message: 'bad config: bucketName must be a string' },
+        );
     });
 
     it('should throw error if credentialsProfile is not a string', () => {
@@ -122,9 +131,12 @@ describe('locationConstraintAssert', () => {
             bucketName: 'premadebucket',
             credentialsProfile: 42,
         });
-        assert.throws(() => {
-            locationConstraintAssert({ 'scality-east': locationConstraint });
-        }, /bad config: credentialsProfile must be a string/);
+        assert.throws(
+            () => {
+                locationConstraintAssert({ 'scality-east': locationConstraint });
+            },
+            { message: 'bad config: credentialsProfile must be a string' },
+        );
     });
 
     it('should throw error if region is not a string', () => {
@@ -134,16 +146,22 @@ describe('locationConstraintAssert', () => {
             credentialsProfile: 'zenko',
             region: 42,
         });
-        assert.throws(() => {
-            locationConstraintAssert({ 'scality-east': locationConstraint });
-        }, /bad config: region must be a string/);
+        assert.throws(
+            () => {
+                locationConstraintAssert({ 'scality-east': locationConstraint });
+            },
+            { message: 'bad config: region must be a string' },
+        );
     });
 
     it('should throw error if us-east-1 not specified', () => {
-        const locationConstraint = new LocationConstraint();
-        assert.throws(() => {
-            locationConstraintAssert({ 'not-us-east-1': locationConstraint });
-        }, '/bad locationConfig: must include us-east-1 as a locationConstraint/');
+        const locationConstraint = new LocationConstraint(undefined, 'locId1');
+        assert.throws(
+            () => {
+                locationConstraintAssert({ 'not-us-east-1': locationConstraint });
+            },
+            { message: 'bad locationConfig: must include us-east-1 as a locationConstraint' },
+        );
     });
 
     it('should not throw error for a valid azure location constraint', () => {
@@ -162,12 +180,19 @@ describe('locationConstraintAssert', () => {
             true,
             getAzureDetails({ azureContainerName: undefined }),
         );
-        assert.throws(() => {
-            locationConstraintAssert({
-                'us-east-1': usEast1,
-                'azurefaketest': locationConstraint,
-            });
-        }, '/bad location constraint: "azurefaketest" azureContainerName must be defined/');
+        assert.throws(
+            () => {
+                locationConstraintAssert({
+                    'us-east-1': usEast1,
+                    'azurefaketest': locationConstraint,
+                });
+            },
+            {
+                message:
+                    'bad location constraint: "azurefaketest" azureContainerName must be set in locationConfig or ' +
+                    'environment variable',
+            },
+        );
     });
 
     it('should throw error if type is azure and azureContainerName is invalid value', () => {
@@ -178,12 +203,15 @@ describe('locationConstraintAssert', () => {
             true,
             getAzureDetails({ azureContainerName: '.' }),
         );
-        assert.throws(() => {
-            locationConstraintAssert({
-                'us-east-1': usEast1,
-                'azurefaketest': locationConstraint,
-            });
-        }, '/bad location constraint: "azurefaketest" azureContainerName is an invalid container name/');
+        assert.throws(
+            () => {
+                locationConstraintAssert({
+                    'us-east-1': usEast1,
+                    'azurefaketest': locationConstraint,
+                });
+            },
+            { message: 'bad location constraint: "azurefaketest" azureContainerName is an invalid container name' },
+        );
     });
 
     it('should throw error if type is azure and azureStorageEndpoint is not specified', () => {
@@ -194,15 +222,20 @@ describe('locationConstraintAssert', () => {
             true,
             getAzureDetails({ azureStorageEndpoint: undefined }),
         );
-        const message =
-            '/bad location constraint: "azurefaketest" azureStorageEndpoint must ' +
-            'be set in locationConfig or environment variable/';
-        assert.throws(() => {
-            locationConstraintAssert({
-                'us-east-1': usEast1,
-                'azurefaketest': locationConstraint,
-            });
-        }, message);
+
+        assert.throws(
+            () => {
+                locationConstraintAssert({
+                    'us-east-1': usEast1,
+                    'azurefaketest': locationConstraint,
+                });
+            },
+            {
+                message:
+                    'bad location constraint: "azurefaketest" azureStorageEndpoint must be set in locationConfig ' +
+                    'or environment variable',
+            },
+        );
     });
 
     it('should throw error if type is azure and azureStorageAccountName is not specified', () => {
@@ -213,15 +246,20 @@ describe('locationConstraintAssert', () => {
             true,
             getAzureDetails({ azureStorageAccountName: undefined }),
         );
-        const message =
-            '/bad location constraint: "azurefaketest" azureStorageAccountName ' +
-            'must be set in locationConfig or environment variable/';
-        assert.throws(() => {
-            locationConstraintAssert({
-                'us-east-1': usEast1,
-                'azurefaketest': locationConstraint,
-            });
-        }, message);
+
+        assert.throws(
+            () => {
+                locationConstraintAssert({
+                    'us-east-1': usEast1,
+                    'azurefaketest': locationConstraint,
+                });
+            },
+            {
+                message:
+                    'bad location constraint: "azurefaketest" storageAccountName must be set in ' +
+                    'locationConfig or environment variable',
+            },
+        );
     });
 
     it('should throw error if type is azure and azureStorageAccountName is invalid value', () => {
@@ -232,12 +270,19 @@ describe('locationConstraintAssert', () => {
             true,
             getAzureDetails({ azureStorageAccountName: 'invalid!!!' }),
         );
-        assert.throws(() => {
-            locationConstraintAssert({
-                'us-east-1': usEast1,
-                'azurefaketest': locationConstraint,
-            });
-        }, '/bad location constraint: "azurefaketest" azureStorageAccountName "invalid!!!" is an invalid value/');
+        assert.throws(
+            () => {
+                locationConstraintAssert({
+                    'us-east-1': usEast1,
+                    'azurefaketest': locationConstraint,
+                });
+            },
+            {
+                message:
+                    'bad location constraint: "azurefaketest" azureStorageAccountName "invalid!!!" is an invalid ' +
+                    'value',
+            },
+        );
     });
 
     it('should throw error if type is azure and azureStorageAccessKey is not specified', () => {
@@ -248,15 +293,20 @@ describe('locationConstraintAssert', () => {
             true,
             getAzureDetails({ azureStorageAccessKey: undefined }),
         );
-        const message =
-            '/bad location constraint: "azurefaketest" azureStorageAccessKey must ' +
-            'be set in locationConfig or environment variable/';
-        assert.throws(() => {
-            locationConstraintAssert({
-                'us-east-1': usEast1,
-                'azurefaketest': locationConstraint,
-            });
-        }, message);
+
+        assert.throws(
+            () => {
+                locationConstraintAssert({
+                    'us-east-1': usEast1,
+                    'azurefaketest': locationConstraint,
+                });
+            },
+            {
+                message:
+                    'bad location constraint: "azurefaketest" storageAccessKey must be set in ' +
+                    'locationConfig or environment variable',
+            },
+        );
     });
 
     it('should throw error if type is azure and azureStorageAccessKey is not a valid base64 string', () => {
@@ -267,12 +317,15 @@ describe('locationConstraintAssert', () => {
             true,
             getAzureDetails({ azureStorageAccessKey: 'invalid!!!' }),
         );
-        assert.throws(() => {
-            locationConstraintAssert({
-                'us-east-1': usEast1,
-                'azurefaketest': locationConstraint,
-            });
-        }, '/bad location constraint: "azurefaketest" azureStorageAccessKey is not a valid base64 string/');
+        assert.throws(
+            () => {
+                locationConstraintAssert({
+                    'us-east-1': usEast1,
+                    'azurefaketest': locationConstraint,
+                });
+            },
+            { message: 'bad location constraint: "azurefaketest" azureStorageAccessKey is not a valid base64 string' },
+        );
     });
 
     it('should set https to true by default', () => {
@@ -328,30 +381,41 @@ describe('locationConstraintAssert', () => {
     it('should throw error if sizeLimitGB is not a number', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint('aws_s3', 'locId2', true, null, true);
-        assert.throws(() => {
-            locationConstraintAssert({
-                'us-east-1': usEast1,
-                'awsstoragesizelimit': locationConstraint,
-            });
-        }, '/bad config: locationConstraints[region].sizeLimitGB must be a number (in gigabytes)');
+        assert.throws(
+            () => {
+                locationConstraintAssert({
+                    'us-east-1': usEast1,
+                    'awsstoragesizelimit': locationConstraint,
+                });
+            },
+            { message: 'bad config: locationConstraints[region].sizeLimitGB must be a number (in gigabytes)' },
+        );
     });
 
     it('should throw error if objectId is not set', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint('azure', undefined, true, getAzureDetails());
-        const message =
-            '/bad config: locationConstraints[region].objectId is mandatory ' +
-            'and must be a unique string across locations';
-        assert.throws(() => {
-            locationConstraintAssert({ 'azurefaketest': locationConstraint, 'us-east-1': usEast1 });
-        }, message);
+
+        assert.throws(
+            () => {
+                locationConstraintAssert({ 'azurefaketest': locationConstraint, 'us-east-1': usEast1 });
+            },
+            {
+                message:
+                    'bad config: locationConstraints[region].objectId is mandatory and must be a unique string ' +
+                    'across locations',
+            },
+        );
     });
 
     it('should throw error if objectId is duplicated', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint('azure', 'locId1', true, getAzureDetails());
-        assert.throws(() => {
-            locationConstraintAssert({ 'azurefaketest': locationConstraint, 'us-east-1': usEast1 });
-        }, '/bad config: location constraint objectId "locId1" is not unique across configured locations');
+        assert.throws(
+            () => {
+                locationConstraintAssert({ 'azurefaketest': locationConstraint, 'us-east-1': usEast1 });
+            },
+            { message: 'bad config: location constraint objectId "locId1" is not unique across configured locations' },
+        );
     });
 });

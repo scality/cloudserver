@@ -38,6 +38,7 @@ describe('aws-node-sdk test bucket versioning listing', function testSuite() {
     let s3;
     const masterVersions = [];
     const allVersions = [];
+    const deleteMarkerKeys = [];
 
     before(async () => {
         const config = getConfig('default', { signatureVersion: 'v4' });
@@ -106,6 +107,7 @@ describe('aws-node-sdk test bucket versioning listing', function testSuite() {
             keycount,
             (i, next) => {
                 const key = masterVersions[i];
+                deleteMarkerKeys.push(key);
                 const params = { Bucket: bucket, Key: key };
                 s3.send(new DeleteObjectCommand(params))
                     .then(data => {
@@ -123,7 +125,8 @@ describe('aws-node-sdk test bucket versioning listing', function testSuite() {
         const params = { Bucket: bucket, MaxKeys: 1000, Delimiter: '/' };
         const data = await s3.send(new ListObjectsCommand(params));
         const keys = data.Contents.map(entry => entry.Key);
-        assert.deepStrictEqual(keys.sort(), masterVersions.sort().slice(15), 'not same keys');
+        const expectedKeys = masterVersions.filter(key => !deleteMarkerKeys.includes(key));
+        assert.deepStrictEqual(keys.sort(), expectedKeys.sort(), 'not same keys');
     });
 
     it('should list all versions', done => {

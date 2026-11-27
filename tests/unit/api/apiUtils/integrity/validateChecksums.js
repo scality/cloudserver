@@ -366,7 +366,7 @@ describe('validateMethodChecksumNoChunking', () => {
 
                 const result = await validateMethodChecksumNoChunking(request, body, log);
 
-                assert.deepStrictEqual(result, ArsenalErrors.InvalidDigest, 'Expected BadDigest error');
+                assert.deepStrictEqual(result, ArsenalErrors.InvalidDigest, 'Expected InvalidDigest error');
             });
         });
     });

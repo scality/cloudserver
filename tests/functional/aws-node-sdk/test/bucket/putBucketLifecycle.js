@@ -496,8 +496,8 @@ describe('aws-sdk test put bucket lifecycle', () => {
             });
         });
 
-        describe.skip('with NoncurrentVersionExpiration', () => {
-            function getParams(noncurrentVersionTransition) {
+        describe('with NoncurrentVersionExpiration', () => {
+            function getParams(noncurrentVersionExpiration) {
                 return {
                     Bucket: bucket,
                     LifecycleConfiguration: {
@@ -506,7 +506,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                                 ID: 'test',
                                 Status: 'Enabled',
                                 Prefix: '',
-                                noncurrentVersionTransition,
+                                NoncurrentVersionExpiration: noncurrentVersionExpiration,
                             },
                         ],
                     },
@@ -514,10 +514,10 @@ describe('aws-sdk test put bucket lifecycle', () => {
             }
 
             it('should allow config', async () => {
-                const noncurrentVersionTransition = {
+                const noncurrentVersionExpiration = {
                     NoncurrentDays: 1,
                 };
-                const params = getParams(noncurrentVersionTransition);
+                const params = getParams(noncurrentVersionExpiration);
                 await s3.send(new PutBucketLifecycleConfigurationCommand(params));
             });
 
